@@ -1,22 +1,25 @@
 /**
  * ============================================================================
- * SOCRATIVE CLONE - MAIN APPLICATION LOGIC (js/app.js)
+ * HANA EXAM ONLINE - MAIN APPLICATION LOGIC (js/app.js)
  * ============================================================================
  * รองรับ:
- * 1. หน้า Launch (Quiz, Team Challenge, Exit Ticket, Quick Question MC/TF/SA)
- * 2. หน้า Library + ปุ่ม Add Quiz ครบทั้ง 5 ฟังก์ชันตามรูปที่ 3:
+ * 1. หน้า Launch (Start Exam/Quiz, Team Challenge, Exit Ticket, Quick Question MC/TF/SA)
+ * 2. หน้า Library + ปุ่ม Add Exam/Quiz ครบทั้ง 5 ฟังก์ชัน:
  *    - Generate Questions with AI (Prompt + แนบไฟล์ Word/PDF/Excel)
  *    - Copy-Paste Questions
  *    - Extract Questions from Document (.docx, .pdf, .xlsx, .txt)
  *    - Import Questions from Code or Excel Template (พร้อมดาวน์โหลดแม่แบบ Excel)
  *    - Blank Quiz
- * 3. หน้า Live Results ของครู (ตามรูปที่ 1 เป๊ะ: Show Names, Show Responses, Show Results,
- *    Pause, Finish Activity, Invite Students, แถบสีเขียว/แดง และ Class Total %)
- * 4. หน้าทำข้อสอบผ่านมือถือของนักเรียนแบบ Real-time + ซิงค์ลง Google Sheets อัตโนมัติ
+ * 3. หน้า Rooms: สร้างชื่อห้องสอบใหม่เพิ่มได้ไม่จำกัด สลับใช้งานได้ทันที และซิงค์ลง Google Sheets
+ * 4. หน้า Live Results แบบ Real-time (Show Names, Show Responses, Show Results,
+ *    Pause, Finish Activity, Invite Examinees, แถบสีเขียว/แดง และ Class Total %)
+ * 5. หน้าทำข้อสอบผ่านมือถือของผู้เข้าสอบแบบ Real-time + ซิงค์ลง Google Sheets อัตโนมัติ
  */
 
-const STORAGE_KEY = 'SOCRATIVE_APP_STATE_V1';
-const SETTINGS_KEY = 'SOCRATIVE_APP_SETTINGS_V1';
+const STORAGE_KEY = 'HANA_EXAM_APP_STATE_V1';
+const LEGACY_STORAGE_KEY = 'SOCRATIVE_APP_STATE_V1';
+const SETTINGS_KEY = 'HANA_EXAM_APP_SETTINGS_V1';
+const LEGACY_SETTINGS_KEY = 'SOCRATIVE_APP_SETTINGS_V1';
 
 // ตั้งค่า PDF.js worker
 if (window.pdfjsLib) {
@@ -24,8 +27,8 @@ if (window.pdfjsLib) {
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
-// ช่องทางสื่อสาร Real-time ระหว่างแท็บครูและแท็บนักเรียน
-const liveChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('socrative_realtime_channel') : null;
+// ช่องทางสื่อสาร Real-time ระหว่างแท็บผู้คุมสอบและแท็บผู้เข้าสอบ
+const liveChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('hana_exam_realtime_channel') : null;
 
 const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby3V0oPb2vz7qu2b-RXjCqjMYtdEiySGYcnDmh375IbJBfjS8DTJQ-4z0hOSO0gXL1B/exec';
 
@@ -36,19 +39,54 @@ let appSettings = {
   roomCode: 'BASICCHANA'
 };
 
-// ข้อมูลเริ่มต้นจำลองเหมือนรูปที่ 1 เป๊ะ (Life Science Quiz) + ชุดข้อสอบภาษาไทยตัวอย่าง
+function getDefaultRooms() {
+  const now = '2026-11-16T08:00:00.000Z';
+  return [
+    {
+      code: 'BASICCHANA',
+      name: 'ห้องสอบพื้นฐาน Hana (Basic Hana Training)',
+      department: 'HRD / Training Center',
+      createdAt: now,
+      updatedAt: now
+    },
+    {
+      code: 'HANA-ORIENT',
+      name: 'ห้องสอบวัดผลการปฐมนิเทศพนักงานรายวัน',
+      department: 'HRD / Orientation',
+      createdAt: now,
+      updatedAt: now
+    },
+    {
+      code: 'LINUS2X-QA',
+      name: 'ห้องสอบ Inspection for LINUS2X Product',
+      department: 'Production / QA Inspection',
+      createdAt: now,
+      updatedAt: now
+    },
+    {
+      code: 'HANA-ESD01',
+      name: 'ห้องสอบมาตรฐานความปลอดภัยและ ESD',
+      department: 'Engineering / Safety',
+      createdAt: now,
+      updatedAt: now
+    }
+  ];
+}
+
+// ข้อมูลเริ่มต้นจำลอง + ชุดข้อสอบตัวอย่าง
 function getInitialSeedState() {
   const defaultQuizId = 'QUIZ_LIFE_SCI_01';
   const thaiQuizId = 'QUIZ_THAI_ELEC_02';
   const defaultSessionId = 'SESS_LIVE_01';
 
   return {
+    rooms: getDefaultRooms(),
     quizzes: [
       {
         id: defaultQuizId,
         title: 'Life Science Quiz',
         subject: 'Biology / Life Science',
-        shareCode: 'SOC-104829',
+        shareCode: 'HANA-104829',
         createdAt: '2026-11-16T08:00:00.000Z',
         updatedAt: '2026-11-16T08:00:00.000Z',
         questions: [
@@ -101,9 +139,9 @@ function getInitialSeedState() {
       },
       {
         id: thaiQuizId,
-        title: 'แบบทดสอบพื้นฐานอิเล็กทรอนิกส์ (Basic Electronics)',
+        title: 'แบบทดสอบพื้นฐานอิเล็กทรอนิกส์และ ESD (Hana Basic Electronics)',
         subject: 'วิศวกรรมไฟฟ้า / อิเล็กทรอนิกส์',
-        shareCode: 'SOC-889201',
+        shareCode: 'HANA-889201',
         createdAt: '2026-11-16T08:30:00.000Z',
         updatedAt: '2026-11-16T08:30:00.000Z',
         questions: [
@@ -147,7 +185,6 @@ function getInitialSeedState() {
       settings: { instantFeedback: true, shuffle: false },
       startedAt: '2026-11-16T08:40:00.000Z'
     },
-    // ข้อมูลนักเรียน 6 คนเริ่มต้นให้ตรงกับรูปที่ 1 เป๊ะ
     responses: [
       {
         id: 'R1',
@@ -249,7 +286,9 @@ let currentStudent = {
 // ================= INITIALIZATION =================
 window.addEventListener('DOMContentLoaded', () => {
   loadSettings();
+  ensureRoomExistsInList(appSettings.roomCode);
   updateRoomBadges();
+  renderRoomsManagement();
   renderQuizLibrary();
   renderLiveResultsTable();
   renderReportsList();
@@ -265,12 +304,15 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ตรวจสอบ URL พารามิเตอร์ว่าเปิดจากมือถือของนักเรียนหรือไม่ (?mode=student&room=...)
+  // ตรวจสอบ URL พารามิเตอร์ว่าเปิดจากมือถือของผู้เข้าสอบหรือไม่ (?mode=student&room=...)
   const params = new URLSearchParams(window.location.search);
   if (params.get('room')) {
-    appSettings.roomCode = params.get('room').toUpperCase();
+    const urlRoom = params.get('room').toUpperCase().trim();
+    ensureRoomExistsInList(urlRoom);
+    appSettings.roomCode = urlRoom;
     document.getElementById('stuRoomInput').value = appSettings.roomCode;
     updateRoomBadges();
+    renderRoomsManagement();
   }
   if (params.get('mode') === 'student') {
     toggleStudentPortalMode(true);
@@ -283,6 +325,7 @@ window.addEventListener('DOMContentLoaded', () => {
         appState = loadAppState();
         renderLiveResultsTable();
         renderQuizLibrary();
+        renderRoomsManagement();
         renderReportsList();
       }
     };
@@ -293,6 +336,7 @@ window.addEventListener('DOMContentLoaded', () => {
       appState = loadAppState();
       renderLiveResultsTable();
       renderQuizLibrary();
+      renderRoomsManagement();
     }
   });
 
@@ -306,13 +350,21 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function loadAppState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      // Migrate from previous version if exists
+      raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    }
     if (!raw) {
       const seed = getInitialSeedState();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
       return seed;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.rooms) || parsed.rooms.length === 0) {
+      parsed.rooms = getDefaultRooms();
+    }
+    return parsed;
   } catch (e) {
     return getInitialSeedState();
   }
@@ -328,7 +380,7 @@ function saveAppState(broadcast = true) {
 
 function loadSettings() {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    let raw = localStorage.getItem(SETTINGS_KEY) || localStorage.getItem(LEGACY_SETTINGS_KEY);
     if (raw) {
       const saved = JSON.parse(raw);
       appSettings = Object.assign(appSettings, saved);
@@ -340,7 +392,6 @@ function loadSettings() {
   document.getElementById('settingSheetDocUrl').value = appSettings.sheetDocUrl || 'https://docs.google.com/spreadsheets/u/0/';
   document.getElementById('settingGasWebAppUrl').value = appSettings.gasWebAppUrl || DEFAULT_GAS_WEB_APP_URL;
   document.getElementById('settingGeminiKey').value = appSettings.geminiApiKey || '';
-  document.getElementById('roomCodeInput').value = appSettings.roomCode || 'BASICCHANA';
   updateDbStatusIndicator();
 
   // ซิงค์สร้างตารางฐานข้อมูลใน Google Sheets ให้อัตโนมัติเมื่อเปิดหน้าเว็บ
@@ -388,7 +439,10 @@ function switchTab(tabName) {
   if (tabName === 'library') renderQuizLibrary();
   if (tabName === 'live') renderLiveResultsTable();
   if (tabName === 'reports') renderReportsList();
-  if (tabName === 'rooms') updateRoomBadges();
+  if (tabName === 'rooms') {
+    updateRoomBadges();
+    renderRoomsManagement();
+  }
 }
 
 function toggleStudentPortalMode(forceStudent) {
@@ -403,34 +457,219 @@ function toggleStudentPortalMode(forceStudent) {
     document.getElementById('view-student').classList.add('active');
     document.getElementById('stuRoomInput').value = appSettings.roomCode;
     document.getElementById('studentRoomBadge').textContent = 'ROOM: ' + appSettings.roomCode;
+    populateRoomsDatalist();
   } else {
     switchTab('live');
   }
 }
 
+// ================= UNLIMITED ROOMS MANAGEMENT =================
+function ensureRoomExistsInList(roomCode, roomName = '', department = 'ทั่วไป') {
+  const code = String(roomCode || 'BASICCHANA').toUpperCase().trim();
+  if (!code) return;
+  if (!Array.isArray(appState.rooms)) {
+    appState.rooms = getDefaultRooms();
+  }
+  const exists = appState.rooms.find(r => String(r.code).toUpperCase() === code);
+  if (!exists) {
+    const now = new Date().toISOString();
+    const newRoom = {
+      code: code,
+      name: roomName || `ห้องสอบ ${code}`,
+      department: department || 'ทั่วไป',
+      createdAt: now,
+      updatedAt: now
+    };
+    appState.rooms.unshift(newRoom);
+    saveAppState(false);
+    if (appSettings.gasWebAppUrl) {
+      callGoogleScript({ action: 'saveRoom', room: newRoom });
+    }
+  }
+}
+
+function populateRoomsDatalist() {
+  const dl = document.getElementById('availableRoomsDatalist');
+  if (!dl) return;
+  dl.innerHTML = (appState.rooms || []).map(rm =>
+    `<option value="${escapeHtml(rm.code)}">${escapeHtml(rm.name)} (${escapeHtml(rm.department || 'ทั่วไป')})</option>`
+  ).join('');
+}
+
 function updateRoomBadges() {
   const code = (appSettings.roomCode || 'BASICCHANA').toUpperCase();
-  document.getElementById('navRoomName').textContent = code;
-  document.getElementById('inviteRoomCodeBig').textContent = code;
+  const navRoomEl = document.getElementById('navRoomName');
+  if (navRoomEl) navRoomEl.textContent = code;
+
+  const launchRoomEl = document.getElementById('launchCurrentRoomLabel');
+  if (launchRoomEl) launchRoomEl.textContent = code;
+
+  const activeHighlight = document.getElementById('activeRoomHighlight');
+  if (activeHighlight) activeHighlight.textContent = code;
+
+  const inviteBig = document.getElementById('inviteRoomCodeBig');
+  if (inviteBig) inviteBig.textContent = code;
+
+  const liveRoomPill = document.getElementById('liveRoomPill');
+  if (liveRoomPill) liveRoomPill.textContent = 'ห้อง: ' + code;
+
   const baseUrl = window.location.origin + window.location.pathname;
   const inviteUrl = `${baseUrl}?mode=student&room=${encodeURIComponent(code)}`;
   const urlDisplay = document.getElementById('studentDirectUrlDisplay');
   if (urlDisplay) urlDisplay.textContent = inviteUrl;
   const inviteInput = document.getElementById('inviteUrlInput');
   if (inviteInput) inviteInput.value = inviteUrl;
+
+  populateRoomsDatalist();
 }
 
-function saveRoomCode() {
-  const val = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-  if (!val) return showToast('กรุณาระบุชื่อห้องสอบ');
-  appSettings.roomCode = val;
+function createNewRoom() {
+  const codeInput = document.getElementById('newRoomCodeInput');
+  const nameInput = document.getElementById('newRoomNameInput');
+  const deptInput = document.getElementById('newRoomDeptInput');
+
+  const rawCode = (codeInput.value || '').trim().toUpperCase().replace(/\s+/g, '-');
+  if (!rawCode) {
+    return showToast('กรุณากรอกรหัสห้องสอบ (Room Code) เช่น HANA-01 หรือ LINUS2X');
+  }
+
+  const roomName = (nameInput.value || '').trim() || `ห้องสอบ ${rawCode}`;
+  const dept = (deptInput.value || '').trim() || 'ทั่วไป';
+  const now = new Date().toISOString();
+
+  if (!Array.isArray(appState.rooms)) appState.rooms = getDefaultRooms();
+  const existingIdx = appState.rooms.findIndex(r => String(r.code).toUpperCase() === rawCode);
+
+  let roomObj;
+  if (existingIdx !== -1) {
+    appState.rooms[existingIdx].name = roomName;
+    appState.rooms[existingIdx].department = dept;
+    appState.rooms[existingIdx].updatedAt = now;
+    roomObj = appState.rooms[existingIdx];
+    showToast(`อัปเดตข้อมูลห้องสอบ "${rawCode}" และสลับไปใช้งานห้องนี้เรียบร้อยแล้ว!`);
+  } else {
+    roomObj = {
+      code: rawCode,
+      name: roomName,
+      department: dept,
+      createdAt: now,
+      updatedAt: now
+    };
+    appState.rooms.unshift(roomObj);
+    showToast(`🎉 สร้างห้องสอบใหม่ "${rawCode}" และเลือกใช้งานเรียบร้อยแล้ว!`);
+  }
+
+  // ตั้งห้องที่สร้างใหม่เป็นห้องปัจจุบันทันที
+  selectActiveRoom(rawCode, false);
+
+  codeInput.value = '';
+  nameInput.value = '';
+  deptInput.value = '';
+
+  if (appSettings.gasWebAppUrl) {
+    callGoogleScript({ action: 'saveRoom', room: roomObj });
+  }
+}
+
+function selectActiveRoom(roomCode, notify = true) {
+  const code = String(roomCode || 'BASICCHANA').toUpperCase().trim();
+  appSettings.roomCode = code;
   if (appState.activeSession) {
-    appState.activeSession.roomCode = val;
+    appState.activeSession.roomCode = code;
   }
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
   saveAppState();
   updateRoomBadges();
-  showToast('เปลี่ยนชื่อห้องสอบเป็น ' + val + ' เรียบร้อยแล้ว');
+  renderRoomsManagement();
+  renderReportsList();
+  if (notify) {
+    showToast(`สลับห้องสอบที่ใช้งานเป็น "${code}" เรียบร้อยแล้ว`);
+  }
+}
+
+function deleteRoomByCode(roomCode) {
+  const code = String(roomCode || '').toUpperCase();
+  if ((appState.rooms || []).length <= 1) {
+    return showToast('ต้องมีห้องสอบอย่างน้อย 1 ห้องในระบบ');
+  }
+  if (!confirm(`ต้องการลบห้องสอบ "${code}" ออกจากรายการใช่หรือไม่?`)) return;
+
+  appState.rooms = appState.rooms.filter(r => String(r.code).toUpperCase() !== code);
+  if (String(appSettings.roomCode).toUpperCase() === code) {
+    appSettings.roomCode = appState.rooms[0].code;
+    if (appState.activeSession) {
+      appState.activeSession.roomCode = appSettings.roomCode;
+    }
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+  }
+  saveAppState();
+  updateRoomBadges();
+  renderRoomsManagement();
+  if (appSettings.gasWebAppUrl) {
+    callGoogleScript({ action: 'deleteRoom', room_code: code });
+  }
+  showToast(`ลบห้องสอบ ${code} เรียบร้อยแล้ว`);
+}
+
+function copyRoomSpecificLink(roomCode) {
+  const baseUrl = window.location.origin + window.location.pathname;
+  const inviteUrl = `${baseUrl}?mode=student&room=${encodeURIComponent(roomCode)}`;
+  navigator.clipboard.writeText(inviteUrl).then(() => {
+    showToast(`คัดลอกลิงก์เข้าห้องสอบ ${roomCode} เรียบร้อยแล้ว!`);
+  });
+}
+
+function renderRoomsManagement() {
+  const container = document.getElementById('roomsListContainer');
+  const countEl = document.getElementById('totalRoomsCount');
+  if (!container) return;
+
+  const rooms = appState.rooms || getDefaultRooms();
+  if (countEl) countEl.textContent = rooms.length;
+
+  const currentActive = String(appSettings.roomCode || 'BASICCHANA').toUpperCase();
+
+  container.innerHTML = rooms.map(rm => {
+    const isCurrent = String(rm.code).toUpperCase() === currentActive;
+    const studentCount = (appState.responses || []).filter(r => String(r.roomCode || '').toUpperCase() === String(rm.code).toUpperCase()).length;
+
+    return `
+      <div class="room-card-item ${isCurrent ? 'active-room' : ''}">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
+            <div>
+              <span class="soc-code-pill" style="font-size:0.95rem;padding:4px 10px;background:${isCurrent ? '#1e40af' : '#e2e8f0'};color:${isCurrent ? '#fff' : '#1e293b'};">
+                ${escapeHtml(rm.code)}
+              </span>
+              ${isCurrent ? '<span style="margin-left:6px;font-size:0.76rem;font-weight:700;color:#16a34a;">● กำลังใช้งาน</span>' : ''}
+            </div>
+            <span style="font-size:0.78rem;color:#64748b;background:#f1f5f9;padding:3px 8px;border-radius:6px;">
+              ${escapeHtml(rm.department || 'ทั่วไป')}
+            </span>
+          </div>
+          <div style="font-weight:700;font-size:0.98rem;color:#0f172a;margin-bottom:4px;">
+            ${escapeHtml(rm.name || rm.code)}
+          </div>
+          <div style="font-size:0.8rem;color:#64748b;">
+            ผู้เข้าสอบสะสมในห้องนี้: <b>${studentCount}</b> คน
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid #f1f5f9;">
+          ${isCurrent
+            ? `<button class="btn-primary-blue" style="padding:6px 12px;font-size:0.8rem;background:#16a34a;" onclick="openLaunchQuizModal('quiz')">🚀 เปิดชุดข้อสอบในห้องนี้</button>`
+            : `<button class="btn-primary-blue" style="padding:6px 12px;font-size:0.8rem;" onclick="selectActiveRoom('${escapeHtml(rm.code)}')">✓ เลือกใช้ห้องนี้</button>`
+          }
+          <button class="btn-outline" style="padding:6px 10px;font-size:0.8rem;" onclick="copyRoomSpecificLink('${escapeHtml(rm.code)}')" title="คัดลอกลิงก์ห้องนี้ให้ผู้เข้าสอบ">
+            🔗 ลิงก์
+          </button>
+          <button class="btn-outline" style="padding:6px 10px;font-size:0.8rem;color:#dc2626;margin-left:auto;" onclick="deleteRoomByCode('${escapeHtml(rm.code)}')" title="ลบห้องสอบนี้">
+            🗑
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function copyStudentLink() {
@@ -441,7 +680,7 @@ function copyStudentLink() {
   });
 }
 
-// ================= LIBRARY & ADD QUIZ MENU (IMAGE 3) =================
+// ================= LIBRARY & ADD QUIZ MENU =================
 function toggleAddQuizMenu(e) {
   e.stopPropagation();
   const pop = document.getElementById('addQuizPopover');
@@ -461,7 +700,7 @@ function renderQuizLibrary() {
   if (quizzes.length === 0) {
     container.innerHTML = `
       <div style="padding:42px;text-align:center;color:#6b7280;">
-        ยังไม่มีชุดข้อสอบที่ตรงกับการค้นหา คลิกปุ่ม <b>+ Add Quiz</b> ด้านบนเพื่อสร้างข้อสอบใหม่
+        ยังไม่มีชุดข้อสอบที่ตรงกับการค้นหา คลิกปุ่ม <b>+ Add Exam / Quiz</b> ด้านบนเพื่อสร้างข้อสอบใหม่
       </div>`;
     return;
   }
@@ -485,9 +724,9 @@ function renderQuizLibrary() {
             <div class="quiz-meta">
               <span>${qCount} ข้อ</span>
               <span>•</span>
-              <span>วิชา: ${escapeHtml(q.subject || 'ทั่วไป')}</span>
+              <span>หมวด/แผนก: ${escapeHtml(q.subject || 'ทั่วไป')}</span>
               <span>•</span>
-              <span class="soc-code-pill">${escapeHtml(q.shareCode || 'SOC-100000')}</span>
+              <span class="soc-code-pill">${escapeHtml(q.shareCode || 'HANA-100000')}</span>
               <span>•</span>
               <span>อัปเดต ${dateStr}</span>
             </div>
@@ -512,7 +751,7 @@ function renderQuizLibrary() {
   }).join('');
 }
 
-// เปิดหน้าต่างสร้างข้อสอบตามโหมดทั้ง 5 ของรูปที่ 3
+// เปิดหน้าต่างสร้างข้อสอบตามโหมดทั้ง 5
 function openCreateQuizFeature(mode, existingQuiz = null) {
   const pop = document.getElementById('addQuizPopover');
   if (pop) pop.classList.remove('open');
@@ -520,7 +759,7 @@ function openCreateQuizFeature(mode, existingQuiz = null) {
   if (!existingQuiz && !document.getElementById('createQuizModal').classList.contains('open')) {
     builderEditingQuizId = null;
     document.getElementById('builderQuizTitle').value = '';
-    document.getElementById('builderQuizSubject').value = 'วิทยาศาสตร์ / ทั่วไป';
+    document.getElementById('builderQuizSubject').value = 'HRD / ทั่วไป';
     builderQuestions = [];
     if (mode === 'blank') {
       addBlankQuestionToBuilder('MC', false);
@@ -535,9 +774,9 @@ function openCreateQuizFeature(mode, existingQuiz = null) {
   });
   const activePill = document.getElementById('tabMode-' + mode);
   if (activePill) {
-    activePill.style.borderColor = '#1a9bd7';
-    activePill.style.background = '#f0f9ff';
-    activePill.style.color = '#0284c7';
+    activePill.style.borderColor = '#1e40af';
+    activePill.style.background = '#eff6ff';
+    activePill.style.color = '#1e40af';
   }
 
   document.querySelectorAll('.create-feature-panel').forEach(p => p.style.display = 'none');
@@ -549,7 +788,7 @@ function openCreateQuizFeature(mode, existingQuiz = null) {
     extract: '📄 Extract Questions from Document (ดึงข้อสอบจากไฟล์ Word / PDF / Excel)',
     copypaste: '📋 Copy-Paste Questions (วางข้อความข้อสอบเพื่อแยกอัตโนมัติ)',
     excelcode: '📊 Import Questions from Code or Excel Template',
-    blank: '✏️ สร้าง / แก้ไขชุดข้อสอบ (Blank Quiz Builder)'
+    blank: '✏️ สร้าง / แก้ไขชุดข้อสอบ (Exam Builder)'
   };
   document.getElementById('createModalTitle').textContent = titles[mode] || 'สร้างชุดข้อสอบ';
 
@@ -573,7 +812,7 @@ function duplicateQuiz(quizId) {
   const copy = JSON.parse(JSON.stringify(quiz));
   copy.id = 'QUIZ_' + Date.now();
   copy.title = quiz.title + ' (Copy)';
-  copy.shareCode = 'SOC-' + Math.floor(100000 + Math.random() * 900000);
+  copy.shareCode = 'HANA-' + Math.floor(100000 + Math.random() * 900000);
   copy.updatedAt = new Date().toISOString();
   appState.quizzes.unshift(copy);
   saveAppState();
@@ -673,7 +912,7 @@ function renderBuilderQuestions() {
       <div class="q-builder-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div style="display:flex;align-items:center;gap:8px;">
-            <span class="soc-code-pill" style="background:#0284c7;color:#fff;">ข้อที่ ${idx + 1}</span>
+            <span class="soc-code-pill" style="background:#1e40af;color:#fff;">ข้อที่ ${idx + 1}</span>
             <select class="form-select" style="width:auto;padding:4px 10px;font-size:0.82rem;"
               onchange="changeBuilderQuestionType(${idx}, this.value)">
               <option value="MC" ${q.type === 'MC' ? 'selected' : ''}>Multiple Choice (ปรนัย)</option>
@@ -754,7 +993,7 @@ function saveBuilderQuiz() {
       id: 'QUIZ_' + Date.now(),
       title: title,
       subject: subject,
-      shareCode: 'SOC-' + Math.floor(100000 + Math.random() * 900000),
+      shareCode: 'HANA-' + Math.floor(100000 + Math.random() * 900000),
       createdAt: now,
       updatedAt: now,
       questions: builderQuestions
@@ -833,7 +1072,6 @@ function parseExcelRowsToQuestions(rows) {
     const keys = Object.keys(row);
     if (keys.length === 0) return;
 
-    // รองรับทั้งหัวตารางภาษาไทยและอังกฤษ
     const qText = row['Question'] || row['question'] || row['โจทย์'] || row['คำถาม'] || row[keys[0]] || '';
     if (!String(qText).trim() || String(qText).toLowerCase() === 'question') return;
 
@@ -870,7 +1108,6 @@ function parseExcelRowsToQuestions(rows) {
 async function extractQuestionsFromRawText(rawText, sourceName = '') {
   const statusBox = document.getElementById('extractStatusBox');
 
-  // หากผู้ใช้ใส่ Gemini API Key ไว้ ให้ใช้ Gemini สกัดข้อสอบจากข้อความเอกสารได้แม่นยำสูงสุด
   if (appSettings.geminiApiKey && rawText.trim().length > 20) {
     try {
       if (statusBox) statusBox.textContent = '✨ กำลังใช้ Gemini AI วิเคราะห์และแยกข้อสอบจากเอกสาร...';
@@ -887,7 +1124,6 @@ async function extractQuestionsFromRawText(rawText, sourceName = '') {
     }
   }
 
-  // ระบบ Smart Regex Parser (ทำงานได้ทันทีแม้ไม่ใส่ API Key รองรับทั้ง ก/ข/ค/ง และ A/B/C/D)
   const parsed = smartParseTextToQuestions(rawText);
   if (parsed.length > 0) {
     builderQuestions = builderQuestions.concat(parsed);
@@ -922,7 +1158,6 @@ function smartParseTextToQuestions(text) {
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
 
-      // ตรวจหาบรรทัดเฉลย เช่น "เฉลย: ข" หรือ "Answer: B"
       const ansMatch = line.match(/^(?:เฉลย|คำตอบ|Answer|Correct|Key)[\s\:\=\-]+([A-Eก-ง]|True|False|.+)$/i);
       if (ansMatch) {
         let rawAns = ansMatch[1].trim().replace(/[\.\)]$/, '');
@@ -931,7 +1166,6 @@ function smartParseTextToQuestions(text) {
         continue;
       }
 
-      // ตรวจหาตัวเลือก A. B. C. D. หรือ ก. ข. ค. ง.
       const optMatch = line.match(/^([A-Dก-ง])[\.\)\s]+(.+)$/i);
       if (optMatch) {
         let keyChar = optMatch[1].toUpperCase();
@@ -1013,7 +1247,6 @@ async function generateQuestionsWithAI() {
     }
   }
 
-  // Built-in Smart Topic Question Generator (ทำงานได้ทันทีแม้ไม่มี API Key)
   const generated = generateBuiltInQuestions(promptText, count, qType);
   builderQuestions = builderQuestions.concat(generated);
   renderBuilderQuestions();
@@ -1022,7 +1255,7 @@ async function generateQuestionsWithAI() {
 
 async function callGeminiToExtractQuestions(contentOrPrompt) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(appSettings.geminiApiKey)}`;
-  const systemInstruction = `คุณคือระบบสกัดและสร้างข้อสอบอัจฉริยะ ให้แปลงข้อมูลที่ได้รับเป็น JSON Array ของข้อสอบเท่านั้น ห้ามมี Markdown คั่น โครงสร้างแต่ละข้อคือ: {"type": "MC" หรือ "TF" หรือ "SA", "text": "โจทย์คำถาม", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correctAnswer": "A หรือ True หรือ คำตอบสั้น", "explanation": "คำอธิบายเฉลย"}`;
+  const systemInstruction = `คุณคือระบบสกัดและสร้างข้อสอบอัจฉริยะของ Hana Exam Online ให้แปลงข้อมูลที่ได้รับเป็น JSON Array ของข้อสอบเท่านั้น ห้ามมี Markdown คั่น โครงสร้างแต่ละข้อคือ: {"type": "MC" หรือ "TF" หรือ "SA", "text": "โจทย์คำถาม", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correctAnswer": "A หรือ True หรือ คำตอบสั้น", "explanation": "คำอธิบายเฉลย"}`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -1051,18 +1284,18 @@ function generateBuiltInQuestions(topic, count, prefType) {
   const templates = [
     {
       type: 'MC',
-      text: `ข้อใดอธิบายหลักการสำคัญของ "${topic}" ได้ถูกต้องที่สุด?`,
+      text: `ข้อใดอธิบายหลักการสำคัญและมาตรฐานของ "${topic}" ได้ถูกต้องที่สุด?`,
       options: [
-        `A. เป็นกระบวนการหลักที่ช่วยให้ระบบของ ${topic} ทำงานได้อย่างสมดุลและมีประสิทธิภาพ`,
+        `A. ปฏิบัติตามขั้นตอนมาตรฐาน (WI/SOP) ของ ${topic} อย่างเคร่งครัดเพื่อคุณภาพและความปลอดภัย`,
         `B. เป็นส่วนประกอบรองที่ไม่มีผลต่อการทำงานหลัก`,
-        `C. เกิดขึ้นเฉพาะในสภาวะสุญญากาศเท่านั้น`,
+        `C. สามารถข้ามขั้นตอนการตรวจสอบได้หากเร่งด่วน`,
         `D. ไม่มีข้อใดกล่าวถูกต้อง`
       ],
       correctAnswer: 'A'
     },
     {
       type: 'TF',
-      text: `การศึกษาและทำความเข้าใจเรื่อง "${topic}" สามารถนำไปประยุกต์ใช้แก้ปัญหาในสถานการณ์จริงได้ ใช่หรือไม่?`,
+      text: `การตรวจสอบความพร้อมก่อนเริ่มงานในหัวข้อ "${topic}" ช่วยลดความผิดพลาดและของเสีย (Defect) ในสายการผลิตได้ ใช่หรือไม่?`,
       options: ['True', 'False'],
       correctAnswer: 'True'
     },
@@ -1076,7 +1309,7 @@ function generateBuiltInQuestions(topic, count, prefType) {
       type: 'MC',
       text: `ปัจจัยในข้อใดส่งผลโดยตรงต่อประสิทธิภาพของ "${topic}" มากที่สุด?`,
       options: [
-        `A. ความเข้าใจในโครงสร้างและองค์ประกอบพื้นฐาน`,
+        `A. ความเข้าใจในโครงสร้าง มาตรฐานการทำงาน และการตรวจสอบอย่างสม่ำเสมอ`,
         `B. การสุ่มค่าพารามิเตอร์โดยไม่วัดผล`,
         `C. การตัดขั้นตอนการตรวจสอบออกทั้งหมด`,
         `D. การใช้ข้อมูลที่ไม่เกี่ยวข้องมาวิเคราะห์`
@@ -1087,7 +1320,7 @@ function generateBuiltInQuestions(topic, count, prefType) {
       type: 'MC',
       text: `ข้อใดคือผลลัพธ์ที่ได้จากการประยุกต์ใช้ "${topic}" อย่างถูกต้อง?`,
       options: [
-        `A. ได้ผลลัพธ์ที่แม่นยำ ตรวจสอบได้ และตรงตามวัตถุประสงค์`,
+        `A. ได้ชิ้นงานและผลลัพธ์ที่แม่นยำ ตรวจสอบย้อนกลับได้ และตรงตามมาตรฐานลูกค้า`,
         `B. ทำให้ขั้นตอนซับซ้อนขึ้นโดยไม่เกิดผลลัพธ์`,
         `C. ไม่สามารถวัดผลการทำงานได้`,
         `D. เกิดความคลาดเคลื่อนสูงกว่ามาตรฐาน`
@@ -1120,17 +1353,17 @@ function downloadExcelQuizTemplate() {
   const sampleRows = [
     {
       'Type': 'MC',
-      'Question': 'สารสีเขียวในใบพืชที่ทำหน้าที่ดูดกลืนแสงคืออะไร?',
-      'Option A': 'Chlorophyll',
-      'Option B': 'Carotenoid',
-      'Option C': 'Hemoglobin',
-      'Option D': 'Melanin',
+      'Question': 'อุปกรณ์ป้องกันไฟฟ้าสถิต (ESD) ที่พนักงานต้องสวมใส่ที่ข้อมือคืออะไร?',
+      'Option A': 'Wrist Strap',
+      'Option B': 'Safety Glasses',
+      'Option C': 'Ear Plugs',
+      'Option D': 'Hair Net',
       'Answer': 'A',
-      'Explanation': 'คลอโรฟิลล์ (Chlorophyll) เป็นสารสีหลักในการสังเคราะห์ด้วยแสง'
+      'Explanation': 'Wrist Strap ใช้ถ่ายเทประจุไฟฟ้าสถิตจากร่างกายลงสู่กราวด์'
     },
     {
       'Type': 'TF',
-      'Question': 'พืชใช้แก๊สคาร์บอนไดออกไซด์ในกระบวนการสังเคราะห์ด้วยแสง',
+      'Question': 'พนักงานต้องตรวจสอบค่าความต้านทานของสายรัดข้อมือ (Wrist Strap) ทุกวันก่อนเริ่มงาน',
       'Option A': 'True',
       'Option B': 'False',
       'Option C': '',
@@ -1140,21 +1373,21 @@ function downloadExcelQuizTemplate() {
     },
     {
       'Type': 'SA',
-      'Question': 'ออร์แกเนลล์ใดในเซลล์พืชที่เกิดกระบวนการสังเคราะห์ด้วยแสง?',
+      'Question': 'หน่วยวัดค่าความต้านทานไฟฟ้าคืออะไร?',
       'Option A': '',
       'Option B': '',
       'Option C': '',
       'Option D': '',
-      'Answer': 'Chloroplast',
+      'Answer': 'โอห์ม',
       'Explanation': ''
     }
   ];
 
   const ws = XLSX.utils.json_to_sheet(sampleRows);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Quiz_Template');
-  XLSX.writeFile(wb, 'Socrative_Quiz_Template.xlsx');
-  showToast('ดาวน์โหลดไฟล์ Socrative_Quiz_Template.xlsx เรียบร้อยแล้ว');
+  XLSX.utils.book_append_sheet(wb, ws, 'Hana_Exam_Template');
+  XLSX.writeFile(wb, 'Hana_Exam_Online_Template.xlsx');
+  showToast('ดาวน์โหลดไฟล์ Hana_Exam_Online_Template.xlsx เรียบร้อยแล้ว');
 }
 
 function handleExcelTemplateUpload(event) {
@@ -1163,7 +1396,7 @@ function handleExcelTemplateUpload(event) {
 
 function importQuizByShareCode() {
   const code = document.getElementById('importShareCodeInput').value.trim().toUpperCase();
-  if (!code) return showToast('กรุณากรอกรหัสชุดข้อสอบ เช่น SOC-104829');
+  if (!code) return showToast('กรุณากรอกรหัสชุดข้อสอบ เช่น HANA-104829');
   const found = appState.quizzes.find(q => String(q.shareCode).toUpperCase() === code);
   if (found) {
     builderQuestions = builderQuestions.concat(JSON.parse(JSON.stringify(found.questions)));
@@ -1175,21 +1408,42 @@ function importQuizByShareCode() {
   }
 }
 
-// ================= LAUNCH ACTIVITIES (IMAGE 2) =================
+// ================= LAUNCH ACTIVITIES =================
 function openLaunchQuizModal(activityType = 'quiz') {
   pendingLaunchType = activityType;
+
+  // Populate Room Selector
+  const roomSel = document.getElementById('launchSelectRoomCode');
+  if (roomSel) {
+    const rooms = appState.rooms || getDefaultRooms();
+    roomSel.innerHTML = rooms.map(rm => {
+      const selected = String(rm.code).toUpperCase() === String(appSettings.roomCode).toUpperCase() ? 'selected' : '';
+      return `<option value="${escapeHtml(rm.code)}" ${selected}>${escapeHtml(rm.code)} — ${escapeHtml(rm.name)}</option>`;
+    }).join('');
+  }
+
+  // Populate Quiz Selector
   const sel = document.getElementById('launchSelectQuizId');
   sel.innerHTML = appState.quizzes.map(q =>
     `<option value="${q.id}">${escapeHtml(q.title)} (${q.questions.length} ข้อ)</option>`
   ).join('');
+
   document.getElementById('launchModalTitle').textContent =
-    activityType === 'team' ? '🚀 เริ่มกิจกรรมแข่งขันเป็นทีม (Team Challenge)' : '📝 เลือกชุดข้อสอบเพื่อเริ่มสอบ (Launch Quiz)';
+    activityType === 'team' ? '🚀 เริ่มกิจกรรมแข่งขันเป็นทีม (Team Challenge)' : '📝 เลือกห้องสอบและชุดข้อสอบเพื่อเริ่มสอบ (Start Exam)';
   openModal('launchQuizModal');
 }
 
 function confirmLaunchSelectedQuiz() {
   const quizId = document.getElementById('launchSelectQuizId').value;
+  const chosenRoom = document.getElementById('launchSelectRoomCode')?.value || appSettings.roomCode;
   if (!quizId) return showToast('กรุณาเลือกชุดข้อสอบก่อน');
+
+  if (chosenRoom) {
+    appSettings.roomCode = chosenRoom.toUpperCase();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+    updateRoomBadges();
+  }
+
   closeModal('launchQuizModal');
   startNewLiveSession(quizId, pendingLaunchType);
 }
@@ -1233,16 +1487,16 @@ function launchExitTicket() {
   if (!exitQuiz) {
     exitQuiz = {
       id: exitQuizId,
-      title: 'Exit Ticket (ประเมินความเข้าใจท้ายคาบ)',
-      subject: 'ประเมินผลท้ายคาบ',
-      shareCode: 'SOC-EXIT01',
+      title: 'Exit Ticket (ประเมินความเข้าใจหลังการอบรม)',
+      subject: 'ประเมินผลท้ายการอบรม',
+      shareCode: 'HANA-EXIT01',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       questions: [
         {
           id: 'EX1',
           type: 'MC',
-          text: 'วันนี้คุณเข้าใจเนื้อหาที่เรียนมากน้อยเพียงใด?',
+          text: 'วันนี้คุณเข้าใจเนื้อหาการอบรมมากน้อยเพียงใด?',
           options: ['A. เข้าใจดีมาก', 'B. เข้าใจพอสมควร', 'C. ยังสงสัยบางจุด', 'D. ไม่เข้าใจเลย'],
           correctAnswer: 'A',
           points: 1
@@ -1258,7 +1512,7 @@ function launchExitTicket() {
         {
           id: 'EX3',
           type: 'SA',
-          text: 'คำตอบสำหรับโจทย์ที่ครูตั้งไว้บนกระดานคืออะไร?',
+          text: 'คำตอบสำหรับโจทย์ที่วิทยากรตั้งไว้คืออะไร?',
           options: [],
           correctAnswer: '',
           points: 1
@@ -1272,21 +1526,21 @@ function launchExitTicket() {
 
 function launchQuickQuestion(qType) {
   const typeLabel = qType === 'MC' ? 'Multiple Choice' : (qType === 'TF' ? 'True / False' : 'Short Answer');
-  const customAnswer = prompt(`เริ่มคำถามด่วน (${typeLabel}) - ระบุเฉลย (เว้นว่างได้):`, qType === 'MC' ? 'A' : (qType === 'TF' ? 'True' : ''));
+  const customAnswer = prompt(`เริ่มคำถามด่วน (${typeLabel}) ในห้อง ${appSettings.roomCode} - ระบุเฉลย (เว้นว่างได้):`, qType === 'MC' ? 'A' : (qType === 'TF' ? 'True' : ''));
   if (customAnswer === null) return;
 
   const quickQuiz = {
     id: 'QUIZ_QUICK_' + Date.now(),
     title: `Quick Question (${typeLabel})`,
     subject: 'Quick Question',
-    shareCode: 'SOC-QUICK',
+    shareCode: 'HANA-QUICK',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     questions: [
       {
         id: 'QQ_1',
         type: qType,
-        text: `คำถามด่วนจากครูผู้สอน (${typeLabel})`,
+        text: `คำถามด่วนจากผู้คุมสอบ (${typeLabel})`,
         options: qType === 'MC' ? ['A', 'B', 'C', 'D'] : (qType === 'TF' ? ['True', 'False'] : []),
         correctAnswer: customAnswer.trim() || (qType === 'MC' ? 'A' : 'True'),
         points: 1
@@ -1297,7 +1551,7 @@ function launchQuickQuestion(qType) {
   startNewLiveSession(quickQuiz.id, 'quick');
 }
 
-// ================= LIVE RESULTS VIEW (IMAGE 1 EXACT REPLICA) =================
+// ================= LIVE RESULTS VIEW =================
 function renderLiveResultsTable() {
   const session = appState.activeSession;
   if (!session) return;
@@ -1306,6 +1560,9 @@ function renderLiveResultsTable() {
   if (!quiz) return;
 
   document.getElementById('liveQuizTitle').textContent = quiz.title;
+  const liveRoomPill = document.getElementById('liveRoomPill');
+  if (liveRoomPill) liveRoomPill.textContent = 'ห้อง: ' + (session.roomCode || appSettings.roomCode);
+
   const statusPill = document.getElementById('liveStatusPill');
   const pauseText = document.getElementById('pauseBtnText');
 
@@ -1354,7 +1611,7 @@ function renderLiveResultsTable() {
   // Render Student Rows
   const tbody = document.getElementById('liveTableBody');
   const rowsHtml = responses.map((resp, rIdx) => {
-    const displayName = showNames ? escapeHtml(resp.studentName) : `Student #${rIdx + 1}`;
+    const displayName = showNames ? escapeHtml(resp.studentName) : `Examinee #${rIdx + 1}`;
     const displayScore = showResults ? `${resp.percent || 0}%` : '—';
 
     const cellsHtml = questions.map((q, qIdx) => {
@@ -1392,7 +1649,7 @@ function renderLiveResultsTable() {
     `;
   }).join('');
 
-  // Calculate Class Total per question (like bottom row in Image 1: 6 Class Total | 33% | 17% | 0% | 0% | 0%)
+  // Calculate Class Total per question
   const totalStudents = responses.length;
   const classTotalCells = questions.map((q, qIdx) => {
     if (totalStudents === 0 || !showResults) return `<td>—</td>`;
@@ -1447,7 +1704,7 @@ function openInviteStudentsModal() {
   openModal('inviteModal');
 }
 
-// ปุ่มจำลองนักเรียนส่งข้อสอบจากมือถือแบบ Real-time เพื่อให้ครูเห็นตารางขยับสดๆ
+// ปุ่มจำลองผู้เข้าสอบส่งข้อสอบจากมือถือแบบ Real-time
 function simulateStudentSubmission() {
   const session = appState.activeSession;
   if (!session) return;
@@ -1455,15 +1712,14 @@ function simulateStudentSubmission() {
   if (!quiz) return;
 
   const sampleNames = [
-    'กิตติพงศ์ ใจดี (ม.3/1)',
-    'พิมพ์ชนก รักเรียน (ม.3/1)',
-    'ธนกร เก่งมาก (ม.3/2)',
-    'ณัฐธิดา สดใส (ม.3/2)',
+    'กิตติพงศ์ ใจดี (OP1)',
+    'พิมพ์ชนก รักเรียน (QA)',
+    'ธนกร เก่งมาก (Production)',
+    'ณัฐธิดา สดใส (HRD)',
     'Wilson, Lucas',
     'Anderson, Emma'
   ];
 
-  // หาคนที่ยังตอบไม่ครบ หรือเพิ่มนักเรียนใหม่
   let targetResp = appState.responses.find(r =>
     r.sessionId === session.id &&
     Object.keys(r.answers || {}).length < quiz.questions.length
@@ -1485,7 +1741,6 @@ function simulateStudentSubmission() {
     appState.responses.push(targetResp);
   }
 
-  // ตอบข้อถัดไป
   const nextQIdx = Object.keys(targetResp.answers).length;
   const q = quiz.questions[nextQIdx];
   if (q) {
@@ -1509,20 +1764,23 @@ function simulateStudentSubmission() {
   }
 }
 
-// ================= STUDENT MOBILE QUIZ FLOW =================
+// ================= STUDENT / EXAMINEE MOBILE QUIZ FLOW =================
 function studentEnterRoom() {
   const room = document.getElementById('stuRoomInput').value.trim().toUpperCase();
   const name = document.getElementById('stuNameInput').value.trim();
 
   if (!room) return showToast('กรุณากรอกรหัสห้องสอบ (Room Name)');
-  if (!name) return showToast('กรุณากรอกชื่อ-นามสกุลของคุณ');
+  if (!name) return showToast('กรุณากรอกชื่อ-นามสกุล หรือรหัสพนักงานของคุณ');
+
+  // หากผู้เข้าสอบพิมพ์ชื่อห้องใหม่ที่ยังไม่มีในระบบ ให้สร้างห้องนั้นให้อัตโนมัติด้วย
+  ensureRoomExistsInList(room);
 
   const session = appState.activeSession;
   if (!session || session.status === 'finished') {
-    return showToast('ขณะนี้ครูยังไม่ได้เปิดห้องสอบ หรือการสอบสิ้นสุดแล้ว');
+    return showToast('ขณะนี้ยังไม่ได้เปิดห้องสอบ หรือการสอบสิ้นสุดแล้ว');
   }
   if (session.status === 'paused') {
-    return showToast('ครูหยุดการทำข้อสอบชั่วคราว กรุณารอสักครู่');
+    return showToast('ผู้คุมสอบหยุดรับคำตอบชั่วคราว กรุณารอสักครู่');
   }
 
   currentStudent = {
@@ -1534,7 +1792,8 @@ function studentEnterRoom() {
     answers: {}
   };
 
-  // สร้างหรือดึงแถวนักเรียนใน Live Results ทันทีที่กดเข้าห้องสอบ (ขึ้นจุดเขียวบนหน้าจอครูทันที)
+  document.getElementById('studentRoomBadge').textContent = 'ROOM: ' + room;
+
   let existing = appState.responses.find(r => r.sessionId === session.id && r.studentId === currentStudent.id);
   if (!existing) {
     existing = {
@@ -1569,7 +1828,7 @@ function renderStudentCurrentQuestion() {
   const q = questions[qIdx];
 
   document.getElementById('stuQuizTitleDisplay').textContent = quiz.title;
-  document.getElementById('stuDisplayName').textContent = `ผู้เข้าสอบ: ${currentStudent.name}`;
+  document.getElementById('stuDisplayName').textContent = `ผู้เข้าสอบ: ${currentStudent.name} (ห้อง: ${currentStudent.roomCode})`;
   document.getElementById('stuProgressBadge').textContent = `ข้อ ${qIdx + 1} / ${questions.length}`;
   document.getElementById('stuPrevBtn').style.visibility = qIdx > 0 ? 'visible' : 'hidden';
 
@@ -1639,7 +1898,7 @@ function studentNavQuestion(delta) {
 function studentSubmitCurrentAnswer() {
   const session = appState.activeSession;
   if (session.status === 'paused') {
-    return showToast('ครูหยุดรับคำตอบชั่วคราว กรุณารอสักครู่');
+    return showToast('ผู้คุมสอบหยุดรับคำตอบชั่วคราว กรุณารอสักครู่');
   }
   const quiz = appState.quizzes.find(q => q.id === session.quizId) || appState.quizzes[0];
   const qIdx = currentStudent.currentIndex;
@@ -1651,7 +1910,6 @@ function studentSubmitCurrentAnswer() {
   const isCorrect = checkAnswerCorrectness(q, val);
   currentStudent.answers[qIdx] = { value: val, isCorrect: isCorrect };
 
-  // บันทึกลง State ทันทีเพื่อให้หน้าครูอัปเดต Real-time
   let resp = appState.responses.find(r => r.sessionId === session.id && r.studentId === currentStudent.id);
   if (!resp) {
     resp = {
@@ -1677,7 +1935,6 @@ function studentSubmitCurrentAnswer() {
     showToast(isCorrect ? '✅ คำตอบถูกต้อง!' : `❌ คำตอบยังไม่ถูก (เฉลย: ${q.correctAnswer})`);
   }
 
-  // ไปข้อถัดไป หรือจบการทำข้อสอบ
   if (qIdx + 1 < quiz.questions.length) {
     currentStudent.currentIndex++;
     renderStudentCurrentQuestion();
@@ -1743,7 +2000,7 @@ async function testGoogleSheetConnection() {
   appSettings.gasWebAppUrl = url;
   const res = await callGoogleScript({ action: 'ping' });
   if (res && res.status === 'ok') {
-    statusEl.innerHTML = `<span style="color:#16a34a;font-weight:700;">✅ เชื่อมต่อสำเร็จ! สร้างตาราง Quizzes, Questions, Sessions, Responses ใน Google Sheets เรียบร้อยแล้ว</span>`;
+    statusEl.innerHTML = `<span style="color:#16a34a;font-weight:700;">✅ เชื่อมต่อสำเร็จ! สร้างตาราง Rooms, Quizzes, Questions, Sessions, Responses ใน Google Sheets เรียบร้อยแล้ว</span>`;
     showToast('เชื่อมต่อ Google Sheets สำเร็จ!');
   } else {
     statusEl.innerHTML = `<span style="color:#dc2626;">⚠️ ไม่สามารถเชื่อมต่อ URL นี้ได้ กรุณาตรวจสอบว่ากด Deploy เป็น Web App (Anyone) แล้ว</span>`;
@@ -1787,9 +2044,21 @@ async function pollLiveFromGoogleSheet(notify = false) {
     session_id: appState.activeSession.id,
     room_code: appSettings.roomCode
   });
-  if (data && data.status === 'ok' && Array.isArray(data.responses)) {
-    const otherResponses = appState.responses.filter(r => r.sessionId !== appState.activeSession.id);
-    appState.responses = otherResponses.concat(data.responses);
+  if (data && data.status === 'ok') {
+    if (Array.isArray(data.responses)) {
+      const otherResponses = appState.responses.filter(r => r.sessionId !== appState.activeSession.id);
+      appState.responses = otherResponses.concat(data.responses);
+    }
+    if (Array.isArray(data.rooms) && data.rooms.length > 0) {
+      data.rooms.forEach(remoteRoom => {
+        if (remoteRoom && remoteRoom.code) {
+          const exists = (appState.rooms || []).some(local => String(local.code).toUpperCase() === String(remoteRoom.code).toUpperCase());
+          if (!exists) {
+            appState.rooms.push(remoteRoom);
+          }
+        }
+      });
+    }
     saveAppState(false);
     if (notify) showToast('✅ ซิงค์ข้อมูลจาก Google Sheets เรียบร้อยแล้ว!');
   }
@@ -1800,7 +2069,10 @@ async function syncAllToGoogleSheets() {
     openModal('settingsModal');
     return showToast('กรุณาตั้งค่า Google Apps Script Web App URL ก่อนซิงค์ขึ้นคลาวด์');
   }
-  showToast('☁️ กำลังส่งทุกชุดข้อสอบและผลคะแนนขึ้น Google Sheets...');
+  showToast('☁️ กำลังส่งรายชื่อห้องสอบ ชุดข้อสอบ และผลคะแนนทั้งหมดขึ้น Google Sheets...');
+  if (Array.isArray(appState.rooms) && appState.rooms.length > 0) {
+    await callGoogleScript({ action: 'saveRooms', rooms: appState.rooms });
+  }
   for (const quiz of appState.quizzes) {
     await syncQuizToGoogleSheet(quiz);
   }
@@ -1808,7 +2080,7 @@ async function syncAllToGoogleSheets() {
   for (const r of appState.responses) {
     if (activeQuiz) await syncStudentResponseToGoogleSheet(r, activeQuiz);
   }
-  showToast('✅ บันทึกทุกชุดข้อสอบและคะแนนลง Google Sheets เรียบร้อยแล้ว!');
+  showToast('✅ บันทึกทุกชุดข้อสอบ ห้องสอบ และคะแนนลง Google Sheets เรียบร้อยแล้ว!');
 }
 
 function renderReportsList() {
@@ -1823,7 +2095,7 @@ function renderReportsList() {
       <div class="quiz-info-main">
         <div class="quiz-doc-icon" style="background:#dcfce7;color:#166534;">📊</div>
         <div>
-          <div class="quiz-name">${escapeHtml(quiz?.title || 'Life Science Quiz')} (ห้อง ${escapeHtml(session?.roomCode || 'BASICCHANA')})</div>
+          <div class="quiz-name">${escapeHtml(quiz?.title || 'Life Science Quiz')} (ห้อง ${escapeHtml(session?.roomCode || appSettings.roomCode || 'BASICCHANA')})</div>
           <div class="quiz-meta">
             <span>ผู้เข้าสอบทั้งหมด ${responses.length} คน</span>
             <span>•</span>
@@ -1848,7 +2120,7 @@ function exportCurrentReportToExcel() {
   const rows = responses.map((r, idx) => {
     const rowObj = {
       'ลำดับ': idx + 1,
-      'ชื่อ-นามสกุล (Student Name)': r.studentName,
+      'ชื่อ-นามสกุล (Examinee Name)': r.studentName,
       'ห้องสอบ (Room)': r.roomCode || appSettings.roomCode,
       'คะแนนที่ได้': r.score,
       'คิดเป็น % (Score %)': `${r.percent}%`
@@ -1862,8 +2134,8 @@ function exportCurrentReportToExcel() {
 
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Live_Results');
-  XLSX.writeFile(wb, `${quiz.title.replace(/\s+/g, '_')}_Results.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, 'Hana_Exam_Results');
+  XLSX.writeFile(wb, `Hana_Exam_${quiz.title.replace(/\s+/g, '_')}_Results.xlsx`);
   showToast('ดาวน์โหลดไฟล์ผลคะแนน Excel เรียบร้อยแล้ว');
 }
 

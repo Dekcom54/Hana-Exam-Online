@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Socrative Online Quiz & Real-time Classroom (Google Sheets DB)</title>
+  <title>Hana Exam Online — ระบบสอบและประเมินผลออนไลน์แบบ Real-time (Google Sheets DB)</title>
+  <!-- Custom SVG Favicon (Hana Exam Online Shield & Check Icon) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e3a8a'/%3E%3Cstop offset='55%25' stop-color='%230284c7'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M32 12L10 22l22 10 18-8.18V36h4V22L32 12z' fill='%23fff'/%3E%3Cpath d='M18 30.5v9.5c0 5.5 6.27 10 14 10s14-4.5 14-10v-9.5L32 37l-14-6.5z' fill='%23bae6fd'/%3E%3Ccircle cx='47' cy='46' r='10' fill='%2322c55e' stroke='%23fff' stroke-width='2.5'/%3E%3Cpath d='M43 46l2.8 3 5.2-5.5' fill='none' stroke='%23fff' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- SheetJS (Excel .xlsx/.xls/.csv) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- Mammoth.js (Word .docx) -->
@@ -18,14 +20,21 @@
 </head>
 <body>
 
-  <!-- ================= TOP NAVBAR (Socrative Teacher Header) ================= -->
+  <!-- ================= TOP NAVBAR (Hana Exam Online Admin / Trainer Header) ================= -->
   <header class="top-navbar" id="teacherNavbar">
     <div class="brand-group">
       <div class="brand-logo" onclick="switchTab('launch')">
-        <div class="socrative-dots">
-          <span></span><span></span><span></span><span></span>
+        <!-- Unique Hana Exam Online Icon (Hexagon Microchip + Graduation Cap + Checkmark) -->
+        <div class="hana-logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+          </svg>
         </div>
-        <span>socrative</span>
+        <div class="hana-logo-text-wrap">
+          <span class="hana-brand-main">Hana Exam Online</span>
+          <span class="hana-brand-sub">Smart Assessment System</span>
+        </div>
       </div>
 
       <nav class="nav-tabs">
@@ -41,7 +50,7 @@
     </div>
 
     <div class="navbar-right">
-      <div class="online-counter" title="จำนวนนักเรียนที่ส่งคำตอบในกิจกรรมปัจจุบัน">
+      <div class="online-counter" title="จำนวนผู้เข้าสอบที่ส่งคำตอบในห้องปัจจุบัน">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
           <circle cx="9" cy="7" r="4"></circle>
@@ -51,7 +60,8 @@
         <span id="navOnlineCount">6</span>
       </div>
 
-      <button class="room-badge-btn" onclick="switchTab('rooms')" title="คลิกเพื่อจัดการชื่อห้องสอบ">
+      <button class="room-badge-btn" onclick="switchTab('rooms')" title="คลิกเพื่อสร้างเพิ่มหรือสลับห้องสอบ (สร้างได้ไม่จำกัด)">
+        <span>🏠 ห้อง:</span>
         <span id="navRoomName">BASICCHANA</span>
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <polyline points="6 9 12 15 18 9"></polyline>
@@ -59,30 +69,36 @@
       </button>
 
       <button class="db-status-btn" onclick="openModal('settingsModal')" id="dbStatusBtn">
-        <span id="dbStatusDot" style="width:8px;height:8px;border-radius:50%;background:#f59e0b;"></span>
+        <span id="dbStatusDot" style="width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>
         <span id="dbStatusText">ตั้งค่า Google Sheet / AI</span>
       </button>
 
       <button class="role-switch-btn" onclick="toggleStudentPortalMode()">
-        📱 มุมมองนักเรียน (มือถือ)
+        📱 มุมมองผู้เข้าสอบ (มือถือ)
       </button>
 
-      <div class="avatar-circle" title="Teacher Account">KH</div>
+      <div class="avatar-circle" title="Hana Exam Online Admin">HN</div>
     </div>
   </header>
 
-  <!-- ================= STUDENT MODE BAR (When viewing as student) ================= -->
-  <header class="top-navbar" id="studentNavbar" style="display:none; background:#fff7ed; border-bottom-color:#fed7aa;">
+  <!-- ================= STUDENT / EXAMINEE MODE BAR ================= -->
+  <header class="top-navbar" id="studentNavbar" style="display:none; background:#eff6ff; border-bottom-color:#bfdbfe;">
     <div class="brand-logo" onclick="toggleStudentPortalMode()">
-      <div class="socrative-dots">
-        <span></span><span></span><span></span><span></span>
+      <div class="hana-logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+          <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+        </svg>
       </div>
-      <span>socrative <small style="font-weight:500;color:#ea580c;font-size:0.8rem;">Student Mobile</small></span>
+      <div class="hana-logo-text-wrap">
+        <span class="hana-brand-main">Hana Exam Online</span>
+        <span class="hana-brand-sub" style="color:#0284c7;">Student / Examinee Portal</span>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span id="studentRoomBadge" class="soc-code-pill" style="background:#ffedd5;color:#c2410c;">ROOM: BASICCHANA</span>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span id="studentRoomBadge" class="soc-code-pill" style="background:#dbeafe;color:#1e40af;">ROOM: BASICCHANA</span>
       <button class="btn-outline" onclick="toggleStudentPortalMode()" style="font-size:0.82rem;padding:6px 12px;">
-        ⬅ กลับหน้าครู (Teacher View)
+        ⬅ กลับหน้าผู้คุมสอบ (Admin View)
       </button>
     </div>
   </header>
@@ -90,53 +106,56 @@
   <!-- ================= MAIN CONTENT ================= -->
   <main class="main-container">
 
-    <!-- 1. LAUNCH TAB (IMAGE 2 EXACT REPLICA) -->
+    <!-- 1. LAUNCH TAB -->
     <section id="view-launch" class="view-section active">
       <div class="launch-wrapper">
+        <div style="margin-bottom:28px;">
+          <span class="soc-code-pill" style="background:#dbeafe;color:#1e40af;padding:5px 14px;border-radius:20px;font-size:0.86rem;">
+            ห้องสอบที่กำลังเลือกใช้งาน: <b id="launchCurrentRoomLabel">BASICCHANA</b>
+            <a href="javascript:void(0)" onclick="switchTab('rooms')" style="margin-left:8px;color:#0284c7;text-decoration:underline;">(เปลี่ยน/สร้างห้องเพิ่ม)</a>
+          </span>
+        </div>
+
         <div class="launch-main-circles">
-          <!-- Quiz -->
+          <!-- Exam / Quiz -->
           <button class="launch-item" onclick="openLaunchQuizModal('quiz')">
             <div class="launch-circle">
               <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <rect x="4" y="4" width="12" height="16" rx="2"></rect>
-                <line x1="7" y1="9" x2="13" y2="9"></line>
-                <line x1="7" y1="13" x2="13" y2="13"></line>
-                <line x1="7" y1="17" x2="11" y2="17"></line>
-                <path d="M18 7a4 4 0 0 1 2 3.5"></path>
-                <path d="M18 4a7 7 0 0 1 4 6.5"></path>
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
             </div>
-            <span class="launch-label">Quiz</span>
+            <span class="launch-label">Start Exam / Quiz<br><small style="font-size:0.8rem;color:#64748b;">เปิดสอบออนไลน์</small></span>
           </button>
 
           <!-- Team Challenge -->
           <button class="launch-item" onclick="openLaunchQuizModal('team')">
             <div class="launch-circle">
               <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
-                <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
-                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
-                <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
               </svg>
             </div>
             <span class="launch-label">Team<br>Challenge</span>
           </button>
 
-          <!-- Exit Ticket -->
+          <!-- Exit Ticket / Post-Training Survey -->
           <button class="launch-item" onclick="launchExitTicket()">
             <div class="launch-circle">
               <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <path d="m9 15 2 2 4-4"></path>
               </svg>
             </div>
-            <span class="launch-label">Exit Ticket</span>
+            <span class="launch-label">Exit Ticket<br><small style="font-size:0.8rem;color:#64748b;">ประเมินผลท้ายการอบรม</small></span>
           </button>
         </div>
 
         <div class="quick-question-divider">
-          <span>QUICK QUESTION</span>
+          <span>QUICK QUESTION (ถามตอบด่วนในห้องอบรม)</span>
         </div>
 
         <div class="quick-circles">
@@ -158,13 +177,13 @@
       </div>
     </section>
 
-    <!-- 2. LIBRARY TAB + ADD QUIZ DROPDOWN (IMAGE 3 EXACT REPLICA) -->
+    <!-- 2. LIBRARY TAB + ADD QUIZ DROPDOWN -->
     <section id="view-library" class="view-section">
       <div class="library-header">
         <div>
-          <h1 class="library-title">Library</h1>
+          <h1 class="library-title">คลังข้อสอบ (Exam Library)</h1>
           <p style="font-size:0.88rem;color:#6b7280;margin-top:2px;">
-            สร้างได้หลายชุดข้อสอบไม่จำกัด • ซิงค์ตารางลง Google Sheets อัตโนมัติ
+            สร้างได้หลายชุดข้อสอบไม่จำกัด • นำเข้าจาก Word/PDF/Excel • ซิงค์ตารางลง Google Sheets อัตโนมัติ
           </p>
         </div>
 
@@ -182,10 +201,10 @@
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            <span>Add Quiz</span>
+            <span>Add Exam / Quiz</span>
           </button>
 
-          <!-- EXACT IMAGE 3 DROPDOWN MENU -->
+          <!-- ADD QUIZ DROPDOWN MENU -->
           <div class="add-quiz-popover" id="addQuizPopover">
             <div class="popover-group-title">
               <span>Create with AI</span>
@@ -233,7 +252,7 @@
               <div>
                 <div class="menu-option-title">
                   <span>Extract Questions from Document</span>
-                  <span class="pro-badge">PRO</span>
+                  <span class="pro-badge">HANA PRO</span>
                 </div>
                 <div class="menu-option-desc">Upload a file (.docx, .pdf, .xlsx), and we'll find and extract the questions in it.</div>
               </div>
@@ -249,7 +268,7 @@
               </div>
               <div>
                 <div class="menu-option-title">Import Questions from Code or Excel Template</div>
-                <div class="menu-option-desc">Import a quiz from another user or from an excel template.</div>
+                <div class="menu-option-desc">Import an exam from another code or from an Excel template.</div>
               </div>
             </button>
 
@@ -263,7 +282,7 @@
                 </svg>
               </div>
               <div>
-                <div class="menu-option-title">Blank Quiz</div>
+                <div class="menu-option-title">Blank Exam / Quiz</div>
                 <div class="menu-option-desc">Jump right in and build something great. (สร้างข้อสอบใหม่ด้วยตัวเอง)</div>
               </div>
             </button>
@@ -275,19 +294,20 @@
       <div class="quiz-list-card" id="quizListContainer"></div>
     </section>
 
-    <!-- 3. LIVE RESULTS TAB (IMAGE 1 EXACT REPLICA) -->
+    <!-- 3. LIVE RESULTS TAB -->
     <section id="view-live" class="view-section">
       <div class="live-results-card">
         <div class="live-header-row">
           <div class="live-quiz-title-wrap">
             <h2 class="live-quiz-title" id="liveQuizTitle">Life Science Quiz</h2>
+            <span class="soc-code-pill" id="liveRoomPill" style="background:#dbeafe;color:#1e40af;font-size:0.82rem;">ห้อง: BASICCHANA</span>
             <span class="info-circle-icon" title="ซิงค์ข้อมูลแบบ Real-time กับ Google Sheets">i</span>
             <span id="liveStatusPill" class="soc-code-pill" style="background:#dcfce7;color:#166534;font-size:0.76rem;">● LIVE</span>
           </div>
 
           <div class="live-controls-group">
-            <button class="btn-outline" onclick="simulateStudentSubmission()" title="จำลองนักเรียนทำข้อสอบผ่านมือถือเข้ามาแบบ Real-time">
-              ⚡ จำลองนักเรียนส่งคำตอบ
+            <button class="btn-outline" onclick="simulateStudentSubmission()" title="จำลองผู้เข้าสอบทำข้อสอบผ่านมือถือเข้ามาแบบ Real-time">
+              ⚡ จำลองผู้เข้าสอบส่งคำตอบ
             </button>
             <button class="btn-soc-action" id="btnPauseActivity" onclick="togglePauseActivity()">
               ⏸ <span id="pauseBtnText">Pause</span>
@@ -296,7 +316,7 @@
               ☑ Finish Activity
             </button>
             <button class="btn-soc-invite" onclick="openInviteStudentsModal()">
-              👥 Invite Students
+              👥 Invite Examinees
             </button>
           </div>
         </div>
@@ -322,7 +342,7 @@
           </label>
 
           <div style="margin-left:auto; display:flex; align-items:center; gap:10px; font-size:0.82rem; color:#64748b;">
-            <span id="syncIndicatorText">อัปเดตอัตโนมัติทุก 3 วินาที</span>
+            <span id="syncIndicatorText">อัปเดตอัตโนมัติทุก 4 วินาที</span>
             <button class="btn-outline" style="padding:5px 10px; font-size:0.78rem;" onclick="manualSyncFromGoogleSheet()">
               🔄 ซิงค์ Google Sheet ตอนนี้
             </button>
@@ -339,28 +359,74 @@
       </div>
     </section>
 
-    <!-- 4. ROOMS TAB -->
+    <!-- 4. ROOMS TAB (UNLIMITED ROOM CREATION & MANAGEMENT) -->
     <section id="view-rooms" class="view-section">
-      <div class="live-results-card" style="max-width:680px;margin:0 auto;">
-        <h2 style="font-size:1.4rem;margin-bottom:8px;">จัดการห้องเรียน (Rooms)</h2>
-        <p style="font-size:0.9rem;color:#6b7280;margin-bottom:20px;">
-          นักเรียนใช้รหัสห้อง (Room Name) นี้ในการเข้าทำข้อสอบผ่านมือถือโดยไม่ต้องสมัครสมาชิก
-        </p>
-        <div class="form-group">
-          <label>ชื่อห้องเรียนปัจจุบัน (Room Code)</label>
-          <div style="display:flex;gap:10px;">
-            <input type="text" id="roomCodeInput" class="form-input" value="BASICCHANA" style="text-transform:uppercase;font-weight:700;" />
-            <button class="btn-primary-blue" onclick="saveRoomCode()">บันทึกชื่อห้อง</button>
+      <div class="library-header">
+        <div>
+          <h1 class="library-title">จัดการห้องสอบ (Rooms Management)</h1>
+          <p style="font-size:0.88rem;color:#6b7280;margin-top:2px;">
+            สร้างเพิ่มชื่อห้องสอบใหม่ได้ไม่จำกัด (เช่น แยกตามแผนก, รุ่นอบรม, หรือวิชา) และสลับใช้งานได้ทันที
+          </p>
+        </div>
+      </div>
+
+      <!-- Create New Room Form Card -->
+      <div class="live-results-card" style="margin-bottom:24px;">
+        <h3 style="font-size:1.1rem;font-weight:700;color:#1e3a8a;margin-bottom:14px;">
+          ➕ สร้างห้องสอบใหม่ (สร้างเพิ่มได้ไม่จำกัด)
+        </h3>
+        <div style="display:grid;grid-template-columns:1fr 1.2fr 1fr auto;gap:12px;align-items:end;">
+          <div>
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#374151;margin-bottom:5px;">
+              รหัสห้องสอบ (Room Code) *
+            </label>
+            <input type="text" id="newRoomCodeInput" class="form-input" placeholder="เช่น HANA-OP1, LINUS2X, HRD01" style="text-transform:uppercase;font-weight:700;" />
+          </div>
+          <div>
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#374151;margin-bottom:5px;">
+              ชื่อเรียกห้องสอบ / รายละเอียด
+            </label>
+            <input type="text" id="newRoomNameInput" class="form-input" placeholder="เช่น ห้องสอบปฐมนิเทศพนักงานใหม่ / QA Inspection" />
+          </div>
+          <div>
+            <label style="display:block;font-size:0.82rem;font-weight:600;color:#374151;margin-bottom:5px;">
+              แผนก / กลุ่มผู้เข้าสอบ
+            </label>
+            <input type="text" id="newRoomDeptInput" class="form-input" placeholder="เช่น HRD / Production / QA" />
+          </div>
+          <div>
+            <button class="btn-primary-blue" style="height:43px;white-space:nowrap;" onclick="createNewRoom()">
+              + สร้างห้องสอบเพิ่ม
+            </button>
           </div>
         </div>
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-top:16px;">
-          <div style="font-weight:600;margin-bottom:6px;">ลิงก์สำหรับให้นักเรียนเข้าสอบผ่านมือถือ:</div>
-          <code id="studentDirectUrlDisplay" style="display:block;padding:10px;background:#fff;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;word-break:break-all;margin-bottom:12px;"></code>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="btn-outline" onclick="copyStudentLink()">📋 คัดลอกลิงก์ให้นักเรียน</button>
-            <button class="btn-primary-blue" onclick="toggleStudentPortalMode()">📱 ทดลองเปิดหน้าจอนักเรียน</button>
+
+        <!-- Active Room Quick Info & Link -->
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px;margin-top:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div style="flex:1;min-width:260px;">
+            <div style="font-weight:700;color:#0369a1;margin-bottom:4px;">
+              📌 ห้องสอบที่กำลังใช้งานขณะนี้: <span id="activeRoomHighlight" style="font-size:1.1rem;color:#1e3a8a;">BASICCHANA</span>
+            </div>
+            <div style="font-size:0.82rem;color:#475569;">
+              ลิงก์ตรงสำหรับผู้เข้าสอบเข้าห้องนี้ผ่านมือถือ:
+              <code id="studentDirectUrlDisplay" style="background:#fff;padding:3px 8px;border-radius:4px;border:1px solid #cbd5e1;font-weight:600;color:#0f172a;word-break:break-all;"></code>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-outline" onclick="copyStudentLink()">📋 คัดลอกลิงก์ห้องปัจจุบัน</button>
+            <button class="btn-primary-blue" onclick="toggleStudentPortalMode()">📱 ทดลองเปิดหน้าผู้เข้าสอบ</button>
           </div>
         </div>
+      </div>
+
+      <!-- All Rooms List Grid -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h3 style="font-size:1.1rem;font-weight:700;color:#1f2937;">
+            รายการห้องสอบทั้งหมด (<span id="totalRoomsCount">0</span> ห้อง)
+          </h3>
+        </div>
+        <div class="rooms-grid" id="roomsListContainer"></div>
       </div>
     </section>
 
@@ -371,33 +437,40 @@
           <h1 class="library-title">Reports & Export</h1>
           <p style="font-size:0.88rem;color:#6b7280;">ดาวน์โหลดผลคะแนนเป็นไฟล์ Excel (.xlsx) หรือส่งข้อมูลเข้า Google Sheets</p>
         </div>
-        <div style="display:flex;gap:10px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <button class="btn-outline" onclick="exportCurrentReportToExcel()">📊 ดาวน์โหลดผลสอบเป็น Excel (.xlsx)</button>
-          <button class="btn-primary-blue" onclick="syncAllToGoogleSheets()">☁️ บันทึกทุกชุดข้อสอบลง Google Sheets</button>
+          <button class="btn-primary-blue" onclick="syncAllToGoogleSheets()">☁️ บันทึกทุกชุดข้อสอบและห้องสอบลง Google Sheets</button>
         </div>
       </div>
       <div class="quiz-list-card" id="reportsListContainer"></div>
     </section>
 
-    <!-- 6. STUDENT MOBILE VIEW -->
+    <!-- 6. STUDENT / EXAMINEE MOBILE VIEW -->
     <section id="view-student" class="view-section">
       <div class="student-portal-wrap">
         <!-- Step 1: Student Login -->
         <div class="student-card" id="studentLoginStep">
           <div class="student-card-header">
-            <h2 style="font-size:1.4rem;color:#111827;">เข้าห้องสอบออนไลน์</h2>
-            <p style="font-size:0.88rem;color:#6b7280;margin-top:4px;">กรอกรหัสห้องเรียนและชื่อ-นามสกุลเพื่อเริ่มทำข้อสอบ</p>
+            <div class="hana-logo-icon" style="margin:0 auto 12px;width:48px;height:48px;border-radius:12px;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+              </svg>
+            </div>
+            <h2 style="font-size:1.4rem;color:#1e3a8a;">Hana Exam Online</h2>
+            <p style="font-size:0.88rem;color:#6b7280;margin-top:4px;">เลือกหรือกรอกรหัสห้องสอบ และระบุชื่อ-รหัสพนักงานเพื่อเริ่มทำข้อสอบ</p>
           </div>
           <div class="form-group">
-            <label>Room Name (รหัสห้องสอบของครู)</label>
-            <input type="text" id="stuRoomInput" class="form-input" value="BASICCHANA" style="text-transform:uppercase;font-weight:700;" />
+            <label>Room Name (รหัสห้องสอบ)</label>
+            <input type="text" id="stuRoomInput" list="availableRoomsDatalist" class="form-input" value="BASICCHANA" placeholder="พิมพ์รหัสห้อง หรือเลือกจากรายการ" style="text-transform:uppercase;font-weight:700;" />
+            <datalist id="availableRoomsDatalist"></datalist>
           </div>
           <div class="form-group">
-            <label>ชื่อ - นามสกุล / เลขที่</label>
-            <input type="text" id="stuNameInput" class="form-input" placeholder="เช่น ด.ช. สมชาย ใจดี เลขที่ 5" />
+            <label>ชื่อ - นามสกุล / รหัสพนักงาน (Employee ID)</label>
+            <input type="text" id="stuNameInput" class="form-input" placeholder="เช่น สมชาย ใจดี (รหัส 660123)" />
           </div>
           <button class="btn-primary-blue" style="width:100%;justify-content:center;padding:12px;" onclick="studentEnterRoom()">
-            เข้าสู่ห้องสอบ (Join Room)
+            เข้าสู่ห้องสอบ (Join Exam Room)
           </button>
         </div>
 
@@ -427,10 +500,10 @@
           <h2 style="font-size:1.35rem;margin-bottom:6px;">ส่งคำตอบเรียบร้อยแล้ว!</h2>
           <p id="stuFinalScoreText" style="font-size:1.05rem;font-weight:700;color:#16a34a;margin-bottom:16px;"></p>
           <p style="font-size:0.85rem;color:#64748b;margin-bottom:20px;">
-            คะแนนและคำตอบของคุณถูกส่งไปยังหน้าจอ Live Results ของครูและบันทึกลง Google Sheets เรียบร้อยแล้ว
+            คะแนนและคำตอบของคุณถูกส่งไปยังหน้าจอ Live Results และบันทึกลงฐานข้อมูล Google Sheets เรียบร้อยแล้ว
           </p>
           <button class="btn-outline" style="width:100%;justify-content:center;" onclick="studentResetToLogin()">
-            สลับผู้เรียน / ทำอีกครั้ง
+            สลับผู้เข้าสอบ / ทำอีกครั้ง
           </button>
         </div>
       </div>
@@ -438,7 +511,7 @@
 
   </main>
 
-  <!-- ================= MODAL 1: CREATE / IMPORT / AI / EXTRACT QUIZ (IMAGE 3 ALL FUNCTIONS) ================= -->
+  <!-- ================= MODAL 1: CREATE / IMPORT / AI / EXTRACT QUIZ ================= -->
   <div class="modal-backdrop" id="createQuizModal">
     <div class="modal-dialog" style="max-width:860px;">
       <div class="modal-header">
@@ -458,22 +531,22 @@
         <!-- Common Quiz Title -->
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px;">
           <div class="form-group" style="margin-bottom:0;">
-            <label>ชื่อชุดข้อสอบ (Quiz Title)</label>
-            <input type="text" id="builderQuizTitle" class="form-input" placeholder="เช่น Life Science Quiz หรือ แบบทดสอบวิทยาศาสตร์ ม.3" />
+            <label>ชื่อชุดข้อสอบ (Exam / Quiz Title)</label>
+            <input type="text" id="builderQuizTitle" class="form-input" placeholder="เช่น แบบวัดผลการปฐมนิเทศ หรือ Inspection for LINUS2X" />
           </div>
           <div class="form-group" style="margin-bottom:0;">
-            <label>หมวดวิชา (Subject)</label>
-            <input type="text" id="builderQuizSubject" class="form-input" placeholder="เช่น วิทยาศาสตร์ / คณิตศาสตร์" />
+            <label>หมวดวิชา / แผนก (Subject / Dept)</label>
+            <input type="text" id="builderQuizSubject" class="form-input" placeholder="เช่น HRD / QA / Production" />
           </div>
         </div>
 
         <!-- PANEL A: AI GENERATE QUESTIONS -->
         <div id="panel-ai" class="create-feature-panel" style="display:none;">
-          <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:16px;margin-bottom:16px;">
-            <div style="font-weight:700;color:#c2410c;margin-bottom:8px;">✨ Generate Questions with AI (สร้างข้อสอบจากหัวข้อหรือไฟล์เอกสาร)</div>
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px;margin-bottom:16px;">
+            <div style="font-weight:700;color:#0369a1;margin-bottom:8px;">✨ Generate Questions with AI (สร้างข้อสอบจากหัวข้อหรือไฟล์เอกสาร)</div>
             <div class="form-group">
               <label>หัวข้อเรื่อง หรือเนื้อหาที่ต้องการให้สร้างข้อสอบ (Prompt)</label>
-              <textarea id="aiPromptInput" class="form-textarea" rows="3" placeholder="เช่น สร้างข้อสอบเรื่อง การสังเคราะห์ด้วยแสงของพืช และระบบนิเวศ ระดับชั้น ม.ต้น พร้อมเฉลย"></textarea>
+              <textarea id="aiPromptInput" class="form-textarea" rows="3" placeholder="เช่น สร้างข้อสอบเรื่อง ความปลอดภัยในการทำงาน และมาตรฐาน ESD ในโรงงานอิเล็กทรอนิกส์ พร้อมเฉลย"></textarea>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
               <div>
@@ -483,6 +556,7 @@
                   <option value="10">10 ข้อ</option>
                   <option value="15">15 ข้อ</option>
                   <option value="20">20 ข้อ</option>
+                  <option value="25">25 ข้อ</option>
                 </select>
               </div>
               <div>
@@ -499,7 +573,7 @@
                 <input type="file" id="aiFileAttach" class="form-input" style="padding:7px;" accept=".docx,.pdf,.xlsx,.xls,.csv,.txt" onchange="handleDocumentUpload(event, 'ai')" />
               </div>
             </div>
-            <button class="btn-primary-blue" style="background:var(--soc-orange);" onclick="generateQuestionsWithAI()">
+            <button class="btn-primary-blue" onclick="generateQuestionsWithAI()">
               ✨ สร้างข้อสอบอัตโนมัติทันที
             </button>
           </div>
@@ -525,14 +599,14 @@
           <div class="form-group">
             <label>วางข้อความข้อสอบที่คัดลอกมาจาก Word / PDF / เว็บไซต์ (ระบบแยกโจทย์+ตัวเลือก+เฉลยอัตโนมัติ)</label>
             <textarea id="copyPasteTextarea" class="form-textarea" rows="7" placeholder="ตัวอย่างรูปแบบที่รองรับ:
-1. สารสีเขียวในใบพืชที่ทำหน้าที่ดูดกลืนแสงคืออะไร?
-A. Carotenoid
-B. Chlorophyll *
-C. Xanthophyll
-D. Anthocyanin
+1. อุปกรณ์ป้องกันไฟฟ้าสถิต (ESD) ที่พนักงานต้องสวมใส่ที่ข้อมือคืออะไร?
+A. Heel Strap
+B. Wrist Strap *
+C. Safety Glasses
+D. Finger Cots
 เฉลย: B
 
-2. พืชใช้แก๊สคาร์บอนไดออกไซด์ในกระบวนการสังเคราะห์ด้วยแสง ใช่หรือไม่?
+2. พนักงานต้องตรวจสอบค่าความต้านทานของสายรัดข้อมือทุกวันก่อนเริ่มงาน ใช่หรือไม่?
 True / False
 เฉลย: True"></textarea>
           </div>
@@ -561,17 +635,17 @@ True / False
             <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
               <div style="font-weight:700;margin-bottom:6px;">2. นำเข้าด้วยรหัสแชร์ข้อสอบ (Share Code)</div>
               <p style="font-size:0.82rem;color:#64748b;margin-bottom:12px;">
-                กรอกรหัสชุดข้อสอบ เช่น <code>SOC-102938</code> เพื่อคัดลอกชุดข้อสอบเข้าคลัง
+                กรอกรหัสชุดข้อสอบ เช่น <code>HANA-104829</code> เพื่อคัดลอกชุดข้อสอบเข้าคลัง
               </p>
               <div style="display:flex;gap:8px;">
-                <input type="text" id="importShareCodeInput" class="form-input" placeholder="SOC-XXXXXX" />
+                <input type="text" id="importShareCodeInput" class="form-input" placeholder="HANA-XXXXXX" />
                 <button class="btn-primary-blue" onclick="importQuizByShareCode()">นำเข้า</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- QUESTIONS BUILDER LIST (Always visible below so teacher can inspect/edit extracted questions) -->
+        <!-- QUESTIONS BUILDER LIST -->
         <div style="margin-top:18px;border-top:1px solid #e5e7eb;padding-top:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
             <div style="font-weight:700;font-size:1rem;">
@@ -599,18 +673,22 @@ True / False
   <div class="modal-backdrop" id="launchQuizModal">
     <div class="modal-dialog" style="max-width:540px;">
       <div class="modal-header">
-        <div class="modal-title" id="launchModalTitle">เลือกชุดข้อสอบที่ต้องการเปิดสอบ (Launch Quiz)</div>
+        <div class="modal-title" id="launchModalTitle">เลือกชุดข้อสอบและห้องสอบที่ต้องการเปิดสอบ</div>
         <button class="modal-close-btn" onclick="closeModal('launchQuizModal')">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label>เลือกชุดข้อสอบจากคลัง (Library)</label>
+          <label>1. เลือกห้องสอบ (Room Code) ที่ต้องการเปิดสอบ</label>
+          <select id="launchSelectRoomCode" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label>2. เลือกชุดข้อสอบจากคลัง (Exam Library)</label>
           <select id="launchSelectQuizId" class="form-select"></select>
         </div>
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
           <div style="font-weight:600;margin-bottom:10px;font-size:0.9rem;">ตั้งค่าการแสดงผลเมื่อเริ่มสอบ</div>
           <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;margin-bottom:8px;">
-            <input type="checkbox" id="launchSettingInstantFeedback" checked /> แสดงผลตรวจคำตอบทันทีที่นักเรียนส่งแต่ละข้อ
+            <input type="checkbox" id="launchSettingInstantFeedback" checked /> แสดงผลตรวจคำตอบทันทีที่ผู้เข้าสอบส่งแต่ละข้อ
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
             <input type="checkbox" id="launchSettingShuffle" /> สุ่มลำดับข้อสอบ
@@ -619,29 +697,29 @@ True / False
       </div>
       <div class="modal-footer">
         <button class="btn-outline" onclick="closeModal('launchQuizModal')">ยกเลิก</button>
-        <button class="btn-primary-blue" onclick="confirmLaunchSelectedQuiz()">🚀 เริ่มเปิดห้องสอบทันที (Start Activity)</button>
+        <button class="btn-primary-blue" onclick="confirmLaunchSelectedQuiz()">🚀 เริ่มเปิดห้องสอบทันที (Start Exam)</button>
       </div>
     </div>
   </div>
 
-  <!-- ================= MODAL 3: INVITE STUDENTS ================= -->
+  <!-- ================= MODAL 3: INVITE STUDENTS / EXAMINEES ================= -->
   <div class="modal-backdrop" id="inviteModal">
     <div class="modal-dialog" style="max-width:500px;">
       <div class="modal-header">
-        <div class="modal-title">👥 Invite Students (เชิญนักเรียนเข้าทำข้อสอบผ่านมือถือ)</div>
+        <div class="modal-title">👥 Invite Examinees (เชิญผู้เข้าสอบผ่านมือถือ)</div>
         <button class="modal-close-btn" onclick="closeModal('inviteModal')">&times;</button>
       </div>
       <div class="modal-body" style="text-align:center;">
         <p style="font-size:0.9rem;color:#475569;margin-bottom:12px;">
-          ให้นักเรียนเปิดลิงก์ด้านล่างผ่านมือถือ หรือสแกนเข้าห้องสอบด้วยรหัสห้อง:
+          ให้ผู้เข้าสอบเปิดลิงก์ด้านล่างผ่านมือถือ หรือเข้าห้องสอบด้วยรหัสห้อง:
         </p>
-        <div style="font-size:2rem;font-weight:800;color:var(--soc-blue);letter-spacing:2px;background:#f0f9ff;padding:12px;border-radius:10px;border:2px dashed #7dd3fc;margin-bottom:16px;" id="inviteRoomCodeBig">
+        <div style="font-size:2rem;font-weight:800;color:var(--soc-blue);letter-spacing:2px;background:#eff6ff;padding:12px;border-radius:10px;border:2px dashed #93c5fd;margin-bottom:16px;" id="inviteRoomCodeBig">
           BASICCHANA
         </div>
         <input type="text" id="inviteUrlInput" class="form-input" readonly style="text-align:center;margin-bottom:12px;font-size:0.85rem;" />
-        <div style="display:flex;gap:10px;justify-content:center;">
-          <button class="btn-primary-blue" onclick="copyStudentLink()">📋 คัดลอกลิงก์ให้นักเรียน</button>
-          <button class="btn-outline" onclick="closeModal('inviteModal'); toggleStudentPortalMode();">📱 ทดลองทำข้อสอบในฐานะนักเรียน</button>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn-primary-blue" onclick="copyStudentLink()">📋 คัดลอกลิงก์ให้ผู้เข้าสอบ</button>
+          <button class="btn-outline" onclick="closeModal('inviteModal'); toggleStudentPortalMode();">📱 ทดลองทำข้อสอบในฐานะผู้เข้าสอบ</button>
         </div>
       </div>
     </div>
@@ -651,7 +729,7 @@ True / False
   <div class="modal-backdrop" id="settingsModal">
     <div class="modal-dialog" style="max-width:680px;">
       <div class="modal-header">
-        <div class="modal-title">⚙️ ตั้งค่าฐานข้อมูล Google Sheets & Gemini AI</div>
+        <div class="modal-title">⚙️ ตั้งค่าฐานข้อมูล Google Sheets & Gemini AI (Hana Exam Online)</div>
         <button class="modal-close-btn" onclick="closeModal('settingsModal')">&times;</button>
       </div>
       <div class="modal-body">
@@ -664,10 +742,10 @@ True / False
         </div>
 
         <div class="form-group">
-          <label>2. Google Apps Script Web App URL (ใช้สร้างตารางอัตโนมัติและเก็บข้อมูล Real-time)</label>
+          <label>2. Google Apps Script Web App URL (เชื่อมต่ออยู่แล้วพร้อมใช้งานทันที)</label>
           <input type="url" id="settingGasWebAppUrl" class="form-input" value="https://script.google.com/macros/s/AKfycby3V0oPb2vz7qu2b-RXjCqjMYtdEiySGYcnDmh375IbJBfjS8DTJQ-4z0hOSO0gXL1B/exec" placeholder="https://script.google.com/macros/s/XXXX/exec" />
           <small style="display:block;color:#64748b;margin-top:4px;line-height:1.4;">
-            * วิธีสร้าง: เปิด Google Sheet > เมนู <b>ส่วนขยาย (Extensions) > Apps Script</b> > นำโค้ดจากไฟล์ <code>google-apps-script/Code.gs</code> ไปวาง > กด <b>Deploy > New deployment > Web app (Anyone)</b> แล้วคัดลอก URL มาวางที่นี่ (หากยังไม่ใส่ ระบบจะเก็บในหน่วยความจำเครื่องให้อัตโนมัติ)
+            * เชื่อมต่อกับ Apps Script ที่มีอยู่ในระบบเรียบร้อยแล้ว (หรือหากต้องการเปลี่ยนไปใช้ชีตใหม่ สามารถนำโค้ดจาก <code>google-apps-script/Code.gs</code> ไปวางใน Apps Script แล้วนำ URL มาใส่แทนได้ทุกเมื่อ)
           </small>
         </div>
 

@@ -1,28 +1,25 @@
-# ระบบสร้างข้อสอบออนไลน์และรายงานผลแบบ Real-time (Socrative Clone + Google Sheets Database)
+# Hana Exam Online — ระบบสอบและประเมินผลออนไลน์แบบ Real-time (Google Sheets Database)
 
-โปรเจกต์นี้ออกแบบให้เหมือนกับ **Socrative** ครบทั้ง 3 หน้าหลักตามภาพตัวอย่าง พร้อมเชื่อมต่อ **Google Sheets** เป็นฐานข้อมูลอัตโนมัติ และรองรับการนำเข้าข้อสอบจากไฟล์ **Word (`.docx`)**, **PDF (`.pdf`)**, และ **Excel (`.xlsx` / `.csv`)**
+โปรเจกต์ **Hana Exam Online** สำหรับสร้างชุดข้อสอบออนไลน์ จัดการห้องสอบได้ไม่จำกัด และรายงานผลคะแนนแบบ Real-time พร้อมเชื่อมต่อฐานข้อมูล **Google Sheets** และ **Google Apps Script** ที่มีอยู่ในระบบได้ทันที รวมถึงรองรับการนำเข้าข้อสอบจากไฟล์ **Word (`.docx`)**, **PDF (`.pdf`)**, และ **Excel (`.xlsx` / `.csv`)**
+
+---
+
+## ✨ จุดเด่นที่อัปเดตใหม่
+1. **เปลี่ยนชื่อและโลโก้เป็น Hana Exam Online**:
+   - เปลี่ยนชื่อระบบทุกหน้า (ทั้งหน้าผู้คุมสอบและหน้ามือถือของผู้เข้าสอบ) เป็น **Hana Exam Online (Smart Assessment System)**
+   - เปลี่ยนไอคอนโลโก้และ Favicon บนแท็บเบราว์เซอร์เป็นสัญลักษณ์ **หมวกบัณฑิตและเครื่องหมายถูกบนเกราะสีน้ำเงิน-ฟ้า (Hana Tech Gradient)** ไม่ซ้ำกับจุดสีส้มของ Socrative เดิม
+2. **สร้างและสลับชื่อห้องสอบ (Rooms) เพิ่มได้ไม่จำกัด**:
+   - ที่เมนู **Rooms** สามารถกด **"+ สร้างห้องสอบเพิ่ม"** เพื่อสร้างรหัสห้องสอบใหม่ได้ไม่จำกัด (เช่น `BASICCHANA`, `HANA-ORIENT`, `LINUS2X-QA`, `HANA-ESD01` หรือชื่อแผนก/รุ่นอบรมใดก็ได้)
+   - สามารถกดสลับห้องที่ต้องการใช้งาน คัดลอกลิงก์เฉพาะของแต่ละห้อง หรือเลือกห้องตอนกดปุ่ม **Start Exam / Quiz** ได้ทันที
+3. **เชื่อมต่อฐานข้อมูล Google Sheets & Apps Script อัตโนมัติ**:
+   - เชื่อมต่อกับ Google Apps Script Web App URL ที่มีอยู่ในโปรเจกต์เรียบร้อยแล้ว (`https://script.google.com/macros/s/AKfycby3V0oPb2vz7qu2b-RXjCqjMYtdEiySGYcnDmh375IbJBfjS8DTJQ-4z0hOSO0gXL1B/exec`)
+   - สร้างตาราง `Rooms`, `Quizzes`, `Questions`, `Sessions`, `Responses` และแยกแท็บผลสอบตามชื่อชุดข้อสอบใน Google Sheets ให้อัตโนมัติ
 
 ---
 
 ## 📁 โครงสร้างไฟล์ในโปรเจกต์
-- [index.html](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/index.html) — หน้าเว็บหลัก (รวมทั้งหน้าครูและหน้าทำข้อสอบผ่านมือถือของนักเรียน)
-- [css/style.css](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/css/style.css) — ดีไซน์ UI สไตล์ Socrative ต้นฉบับ
-- [js/app.js](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/js/app.js) — ระบบสร้างข้อสอบหลายชุด, สกัดข้อสอบจาก Word/PDF/Excel, สร้างข้อสอบด้วย AI และตารางผลสอบ Real-time
-- [google-apps-script/Code.gs](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/google-apps-script/Code.gs) — โค้ดสำหรับนำไปวางใน Google Sheets เพื่อสร้างตารางฐานข้อมูลให้อัตโนมัติ
+- [index.html](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/index.html) — หน้าเว็บหลักของระบบ **Hana Exam Online** (รวมทั้งหน้าผู้คุมสอบและหน้าทำข้อสอบผ่านมือถือของผู้เข้าสอบ)
+- [css/style.css](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/css/style.css) — ดีไซน์ UI โทนสีน้ำเงิน-ฟ้าของ Hana Exam Online
+- [js/app.js](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/js/app.js) — ระบบจัดการห้องสอบไม่จำกัด, สร้างข้อสอบหลายชุด, สกัดข้อสอบจาก Word/PDF/Excel, สร้างข้อสอบด้วย AI และตารางผลสอบ Real-time
+- [google-apps-script/Code.gs](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/google-apps-script/Code.gs) — โค้ด Google Apps Script สำหรับสร้างตารางฐานข้อมูลใน Google Sheets อัตโนมัติ
 - [api.php](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/api.php) — ไฟล์ PHP Proxy เสริมสำหรับกรณีนำไปฝากบน PHP Web Hosting
-
----
-
-## 🚀 วิธีเชื่อมต่อฐานข้อมูล Google Sheets (สร้างตารางอัตโนมัติ)
-
-1. เปิดลิงก์ Google Sheets ของคุณ: https://docs.google.com/spreadsheets/u/0/ แล้วกดสร้างชีตว่างใหม่ (Blank spreadsheet)
-2. ไปที่เมนูด้านบน **Extensions (ส่วนขยาย) > Apps Script**
-3. ลบโค้ดเดิมในหน้าต่าง Apps Script ออกทั้งหมด แล้วคัดลอกโค้ดจากไฟล์ [Code.gs](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/google-apps-script/Code.gs) ไปวางแทนที่
-4. กดปุ่ม **Save (รูปแผ่นดิสก์)**
-5. เลือกฟังก์ชัน `setupDatabase` ที่แถบด้านบน แล้วกดปุ่ม **Run (เรียกใช้)** 1 ครั้ง (กดอนุญาตสิทธิ์ให้เรียบร้อย) — ระบบจะสร้างตาราง `Quizzes`, `Questions`, `Sessions`, `Responses` และสร้างแท็บแยกตามชื่อชุดข้อสอบให้อัตโนมัติทันที
-6. กดปุ่มสีน้ำเงินมุมขวาบน **Deploy (ทำให้ใช้งานได้) > New deployment (การทำให้ใช้งานได้รายการใหม่)**:
-   - คลิกไอคอนฟันเฟือง เลือกประเภท **Web app (เว็บแอป)**
-   - ช่อง **Execute as (ดำเนินการในฐานะ)**: เลือก `Me (ฉัน)`
-   - ช่อง **Who has access (ผู้ที่มีสิทธิ์เข้าถึง)**: เลือก `Anyone (ทุกคน)`
-   - กด **Deploy** แล้วคัดลอก **Web App URL** ที่ได้
-7. เปิดหน้าเว็บ [index.html](file:///C:/Users/thanaty/.gemini/antigravity/scratch/socrative-quiz-app/index.html) คลิกปุ่ม **"ตั้งค่า Google Sheet / AI"** ด้านบน แล้วนำ **Web App URL** ไปวางและกดบันทึกได้เลย!
