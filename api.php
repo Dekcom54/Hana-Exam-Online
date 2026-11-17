@@ -24,7 +24,7 @@ if (!is_array($body)) {
     $body = $_REQUEST;
 }
 
-$defaultGasUrl = 'https://script.google.com/macros/s/AKfycby3V0oPb2vz7qu2b-RXjCqjMYtdEiySGYcnDmh375IbJBfjS8DTJQ-4z0hOSO0gXL1B/exec';
+$defaultGasUrl = 'https://script.google.com/macros/s/AKfycbzSEMEiZ33E0FEhCmQmgsxueaTijfJNXDG_R_B54ix59EBRBN0TcSa3VfWSM1LbrCkE/exec';
 $gasUrl = isset($body['gasUrl']) && !empty(trim($body['gasUrl'])) ? trim($body['gasUrl']) : $defaultGasUrl;
 
 // ถ้าระบุ Google Apps Script Web App URL มา ให้ส่งต่อไปยัง Google Sheet โดยตรง

@@ -16,6 +16,8 @@
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
   <!-- PDF.js (PDF text extraction) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- LZ-String (Compress Exam Data into Student URL for 100% instant mobile loading) -->
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -24,7 +26,6 @@
   <header class="top-navbar" id="teacherNavbar">
     <div class="brand-group">
       <div class="brand-logo" onclick="switchTab('launch')">
-        <!-- Unique Hana Exam Online Icon (Hexagon Microchip + Graduation Cap + Checkmark) -->
         <div class="hana-logo-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
@@ -57,12 +58,12 @@
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
         </svg>
-        <span id="navOnlineCount">6</span>
+        <span id="navOnlineCount">0</span>
       </div>
 
       <button class="room-badge-btn" onclick="switchTab('rooms')" title="คลิกเพื่อสร้างเพิ่มหรือสลับห้องสอบ (สร้างได้ไม่จำกัด)">
         <span>🏠 ห้อง:</span>
-        <span id="navRoomName">BASICCHANA</span>
+        <span id="navRoomName">THANAT01</span>
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -96,8 +97,8 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <span id="studentRoomBadge" class="soc-code-pill" style="background:#dbeafe;color:#1e40af;">ROOM: BASICCHANA</span>
-      <button class="btn-outline" onclick="toggleStudentPortalMode()" style="font-size:0.82rem;padding:6px 12px;">
+      <span id="studentRoomBadge" class="soc-code-pill" style="background:#dbeafe;color:#1e40af;">ROOM: THANAT01</span>
+      <button class="btn-outline" id="backToAdminBtn" onclick="toggleStudentPortalMode()" style="font-size:0.82rem;padding:6px 12px;">
         ⬅ กลับหน้าผู้คุมสอบ (Admin View)
       </button>
     </div>
@@ -111,7 +112,7 @@
       <div class="launch-wrapper">
         <div style="margin-bottom:28px;">
           <span class="soc-code-pill" style="background:#dbeafe;color:#1e40af;padding:5px 14px;border-radius:20px;font-size:0.86rem;">
-            ห้องสอบที่กำลังเลือกใช้งาน: <b id="launchCurrentRoomLabel">BASICCHANA</b>
+            ห้องสอบที่กำลังเลือกใช้งาน: <b id="launchCurrentRoomLabel">THANAT01</b>
             <a href="javascript:void(0)" onclick="switchTab('rooms')" style="margin-left:8px;color:#0284c7;text-decoration:underline;">(เปลี่ยน/สร้างห้องเพิ่ม)</a>
           </span>
         </div>
@@ -299,8 +300,8 @@
       <div class="live-results-card">
         <div class="live-header-row">
           <div class="live-quiz-title-wrap">
-            <h2 class="live-quiz-title" id="liveQuizTitle">Life Science Quiz</h2>
-            <span class="soc-code-pill" id="liveRoomPill" style="background:#dbeafe;color:#1e40af;font-size:0.82rem;">ห้อง: BASICCHANA</span>
+            <h2 class="live-quiz-title" id="liveQuizTitle">แบบวัดผลการปฐมนิเทศ พนักงานรายวัน 25 ข้อ</h2>
+            <span class="soc-code-pill" id="liveRoomPill" style="background:#dbeafe;color:#1e40af;font-size:0.82rem;">ห้อง: THANAT01</span>
             <span class="info-circle-icon" title="ซิงค์ข้อมูลแบบ Real-time กับ Google Sheets">i</span>
             <span id="liveStatusPill" class="soc-code-pill" style="background:#dcfce7;color:#166534;font-size:0.76rem;">● LIVE</span>
           </div>
@@ -342,7 +343,7 @@
           </label>
 
           <div style="margin-left:auto; display:flex; align-items:center; gap:10px; font-size:0.82rem; color:#64748b;">
-            <span id="syncIndicatorText">อัปเดตอัตโนมัติทุก 4 วินาที</span>
+            <span id="syncIndicatorText">อัปเดตอัตโนมัติทุก 3 วินาที</span>
             <button class="btn-outline" style="padding:5px 10px; font-size:0.78rem;" onclick="manualSyncFromGoogleSheet()">
               🔄 ซิงค์ Google Sheet ตอนนี้
             </button>
@@ -380,19 +381,19 @@
             <label style="display:block;font-size:0.82rem;font-weight:600;color:#374151;margin-bottom:5px;">
               รหัสห้องสอบ (Room Code) *
             </label>
-            <input type="text" id="newRoomCodeInput" class="form-input" placeholder="เช่น HANA-OP1, LINUS2X, HRD01" style="text-transform:uppercase;font-weight:700;" />
+            <input type="text" id="newRoomCodeInput" class="form-input" placeholder="เช่น THANAT01, HANA-OP1, LINUS2X" style="text-transform:uppercase;font-weight:700;" />
           </div>
           <div>
             <label style="display:block;font-size:0.82rem;font-weight:600;color:#374151;margin-bottom:5px;">
               ชื่อเรียกห้องสอบ / รายละเอียด
             </label>
-            <input type="text" id="newRoomNameInput" class="form-input" placeholder="เช่น ห้องสอบปฐมนิเทศพนักงานใหม่ / QA Inspection" />
+            <input type="text" id="newRoomNameInput" class="form-input" placeholder="เช่น แบบวัดผลการปฐมนิเทศพนักงานรายวัน" />
           </div>
           <div>
             <label style="display:block;font-size:0.82rem;font-weight:600;color:#374151;margin-bottom:5px;">
               แผนก / กลุ่มผู้เข้าสอบ
             </label>
-            <input type="text" id="newRoomDeptInput" class="form-input" placeholder="เช่น HRD / Production / QA" />
+            <input type="text" id="newRoomDeptInput" class="form-input" placeholder="เช่น new employee / HRD / QA" />
           </div>
           <div>
             <button class="btn-primary-blue" style="height:43px;white-space:nowrap;" onclick="createNewRoom()">
@@ -405,16 +406,17 @@
         <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px;margin-top:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
           <div style="flex:1;min-width:260px;">
             <div style="font-weight:700;color:#0369a1;margin-bottom:4px;">
-              📌 ห้องสอบที่กำลังใช้งานขณะนี้: <span id="activeRoomHighlight" style="font-size:1.1rem;color:#1e3a8a;">BASICCHANA</span>
+              📌 ห้องสอบที่กำลังใช้งานขณะนี้: <span id="activeRoomHighlight" style="font-size:1.1rem;color:#1e3a8a;">THANAT01</span>
+              <span style="margin-left:8px;font-size:0.84rem;color:#16a34a;" id="activeRoomQuizBadge"></span>
             </div>
             <div style="font-size:0.82rem;color:#475569;">
-              ลิงก์ตรงสำหรับผู้เข้าสอบเข้าห้องนี้ผ่านมือถือ:
-              <code id="studentDirectUrlDisplay" style="background:#fff;padding:3px 8px;border-radius:4px;border:1px solid #cbd5e1;font-weight:600;color:#0f172a;word-break:break-all;"></code>
+              ลิงก์ตรงสำหรับผู้เข้าสอบเข้าห้องนี้ผ่านมือถือ (ฝังชุดข้อสอบปัจจุบันให้มือถือโหลดได้ทันที):
+              <code id="studentDirectUrlDisplay" style="display:block;margin-top:4px;background:#fff;padding:6px 10px;border-radius:6px;border:1px solid #cbd5e1;font-weight:600;color:#0f172a;word-break:break-all;max-height:56px;overflow-y:auto;"></code>
             </div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn-outline" onclick="copyStudentLink()">📋 คัดลอกลิงก์ห้องปัจจุบัน</button>
-            <button class="btn-primary-blue" onclick="toggleStudentPortalMode()">📱 ทดลองเปิดหน้าผู้เข้าสอบ</button>
+            <button class="btn-primary-blue" onclick="openInviteStudentsModal()">📱 QR Code / เชิญผู้เข้าสอบ</button>
           </div>
         </div>
       </div>
@@ -458,18 +460,21 @@
               </svg>
             </div>
             <h2 style="font-size:1.4rem;color:#1e3a8a;">Hana Exam Online</h2>
-            <p style="font-size:0.88rem;color:#6b7280;margin-top:4px;">เลือกหรือกรอกรหัสห้องสอบ และระบุชื่อ-รหัสพนักงานเพื่อเริ่มทำข้อสอบ</p>
+            <p style="font-size:0.88rem;color:#6b7280;margin-top:4px;">เลือกหรือกรอกรหัสห้องสอบ และระบุรหัสพนักงาน-ชื่อเพื่อเริ่มทำข้อสอบ</p>
+            <div id="stuDetectedQuizBanner" style="margin-top:10px;padding:8px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:0.84rem;color:#1e40af;font-weight:600;">
+              ชุดข้อสอบที่เปิดสอบ: แบบวัดผลการปฐมนิเทศ พนักงานรายวัน 25 ข้อ
+            </div>
           </div>
           <div class="form-group">
             <label>Room Name (รหัสห้องสอบ)</label>
-            <input type="text" id="stuRoomInput" list="availableRoomsDatalist" class="form-input" value="BASICCHANA" placeholder="พิมพ์รหัสห้อง หรือเลือกจากรายการ" style="text-transform:uppercase;font-weight:700;" />
+            <input type="text" id="stuRoomInput" list="availableRoomsDatalist" class="form-input" value="THANAT01" placeholder="พิมพ์รหัสห้อง เช่น THANAT01" style="text-transform:uppercase;font-weight:700;" />
             <datalist id="availableRoomsDatalist"></datalist>
           </div>
           <div class="form-group">
-            <label>ชื่อ - นามสกุล / รหัสพนักงาน (Employee ID)</label>
-            <input type="text" id="stuNameInput" class="form-input" placeholder="เช่น สมชาย ใจดี (รหัส 660123)" />
+            <label>รหัสพนักงาน และ ชื่อ - นามสกุล (Employee ID & Name)</label>
+            <input type="text" id="stuNameInput" class="form-input" placeholder="เช่น 056894 Thanat" />
           </div>
-          <button class="btn-primary-blue" style="width:100%;justify-content:center;padding:12px;" onclick="studentEnterRoom()">
+          <button class="btn-primary-blue" id="stuJoinBtn" style="width:100%;justify-content:center;padding:12px;" onclick="studentEnterRoom()">
             เข้าสู่ห้องสอบ (Join Exam Room)
           </button>
         </div>
@@ -478,10 +483,10 @@
         <div class="student-card" id="studentQuizStep" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
             <div>
-              <div id="stuQuizTitleDisplay" style="font-weight:700;font-size:1rem;color:#0f172a;">Life Science Quiz</div>
+              <div id="stuQuizTitleDisplay" style="font-weight:700;font-size:1rem;color:#0f172a;">แบบวัดผลการปฐมนิเทศ พนักงานรายวัน 25 ข้อ</div>
               <div id="stuDisplayName" style="font-size:0.8rem;color:#64748b;"></div>
             </div>
-            <span id="stuProgressBadge" class="soc-code-pill" style="background:#e0f2fe;color:#0369a1;">ข้อ 1 / 5</span>
+            <span id="stuProgressBadge" class="soc-code-pill" style="background:#e0f2fe;color:#0369a1;white-space:nowrap;">ข้อ 1 / 25</span>
           </div>
 
           <div id="stuQuestionContainer"></div>
@@ -532,7 +537,7 @@
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px;">
           <div class="form-group" style="margin-bottom:0;">
             <label>ชื่อชุดข้อสอบ (Exam / Quiz Title)</label>
-            <input type="text" id="builderQuizTitle" class="form-input" placeholder="เช่น แบบวัดผลการปฐมนิเทศ หรือ Inspection for LINUS2X" />
+            <input type="text" id="builderQuizTitle" class="form-input" placeholder="เช่น แบบวัดผลการปฐมนิเทศ พนักงานรายวัน 25 ข้อ" />
           </div>
           <div class="form-group" style="margin-bottom:0;">
             <label>หมวดวิชา / แผนก (Subject / Dept)</label>
@@ -588,7 +593,7 @@
               คลิกเพื่อเลือกไฟล์ Word (.docx), PDF (.pdf), Excel (.xlsx/.csv) หรือ Text
             </div>
             <div style="font-size:0.84rem;color:#64748b;">
-              ระบบจะอ่านข้อความจากไฟล์และแยกโจทย์ ตัวเลือก ก/ข/ค/ง หรือ A/B/C/D พร้อมเฉลยให้อัตโนมัติ
+              ระบบจะอ่านข้อความจากไฟล์และแยกโจทย์ ตัวเลือก ก/ข/ค/ง หรือ A/B/C/D หรือ True/False พร้อมเฉลยให้อัตโนมัติ
             </div>
           </div>
           <div id="extractStatusBox" style="margin-top:12px;font-size:0.88rem;color:#0284c7;font-weight:600;"></div>
@@ -599,16 +604,8 @@
           <div class="form-group">
             <label>วางข้อความข้อสอบที่คัดลอกมาจาก Word / PDF / เว็บไซต์ (ระบบแยกโจทย์+ตัวเลือก+เฉลยอัตโนมัติ)</label>
             <textarea id="copyPasteTextarea" class="form-textarea" rows="7" placeholder="ตัวอย่างรูปแบบที่รองรับ:
-1. อุปกรณ์ป้องกันไฟฟ้าสถิต (ESD) ที่พนักงานต้องสวมใส่ที่ข้อมือคืออะไร?
-A. Heel Strap
-B. Wrist Strap *
-C. Safety Glasses
-D. Finger Cots
-เฉลย: B
-
-2. พนักงานต้องตรวจสอบค่าความต้านทานของสายรัดข้อมือทุกวันก่อนเริ่มงาน ใช่หรือไม่?
-True / False
-เฉลย: True"></textarea>
+1. วันทำงานปกติของพนักงานรายวันใน 1 สัปดาห์ มีวันทำงาน 6 วัน และมีวันหยุด 1 วัน True
+2. บริษัทกำหนดกะในการทำงานของพนักงานรายวันไว้ 3 กะต่อวัน False"></textarea>
           </div>
           <button class="btn-primary-blue" onclick="parseCopyPasteText()">
             🔍 แปลงข้อความเป็นข้อสอบเข้าตารางด้านล่าง
@@ -635,7 +632,7 @@ True / False
             <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
               <div style="font-weight:700;margin-bottom:6px;">2. นำเข้าด้วยรหัสแชร์ข้อสอบ (Share Code)</div>
               <p style="font-size:0.82rem;color:#64748b;margin-bottom:12px;">
-                กรอกรหัสชุดข้อสอบ เช่น <code>HANA-104829</code> เพื่อคัดลอกชุดข้อสอบเข้าคลัง
+                กรอกรหัสชุดข้อสอบ เช่น <code>HANA-269251</code> เพื่อคัดลอกชุดข้อสอบเข้าคลัง
               </p>
               <div style="display:flex;gap:8px;">
                 <input type="text" id="importShareCodeInput" class="form-input" placeholder="HANA-XXXXXX" />
@@ -704,19 +701,23 @@ True / False
 
   <!-- ================= MODAL 3: INVITE STUDENTS / EXAMINEES ================= -->
   <div class="modal-backdrop" id="inviteModal">
-    <div class="modal-dialog" style="max-width:500px;">
+    <div class="modal-dialog" style="max-width:540px;">
       <div class="modal-header">
         <div class="modal-title">👥 Invite Examinees (เชิญผู้เข้าสอบผ่านมือถือ)</div>
         <button class="modal-close-btn" onclick="closeModal('inviteModal')">&times;</button>
       </div>
       <div class="modal-body" style="text-align:center;">
-        <p style="font-size:0.9rem;color:#475569;margin-bottom:12px;">
-          ให้ผู้เข้าสอบเปิดลิงก์ด้านล่างผ่านมือถือ หรือเข้าห้องสอบด้วยรหัสห้อง:
+        <p style="font-size:0.9rem;color:#475569;margin-bottom:8px;">
+          ให้ผู้เข้าสอบสแกน QR Code หรือเปิดลิงก์ด้านล่างผ่านมือถือ (ลิงก์นี้บรรจุชุดข้อสอบที่เปิดอยู่ไปให้มือถือโดยตรง):
         </p>
-        <div style="font-size:2rem;font-weight:800;color:var(--soc-blue);letter-spacing:2px;background:#eff6ff;padding:12px;border-radius:10px;border:2px dashed #93c5fd;margin-bottom:16px;" id="inviteRoomCodeBig">
-          BASICCHANA
+        <div style="font-size:1.75rem;font-weight:800;color:var(--soc-blue);letter-spacing:2px;background:#eff6ff;padding:10px;border-radius:10px;border:2px dashed #93c5fd;margin-bottom:10px;" id="inviteRoomCodeBig">
+          THANAT01
         </div>
-        <input type="text" id="inviteUrlInput" class="form-input" readonly style="text-align:center;margin-bottom:12px;font-size:0.85rem;" />
+        <div id="inviteQuizNameLabel" style="font-size:0.9rem;font-weight:700;color:#16a34a;margin-bottom:12px;"></div>
+        <div style="margin-bottom:12px;display:flex;justify-content:center;">
+          <img id="inviteQrCodeImg" alt="QR Code สำหรับเข้าสอบ" style="width:180px;height:180px;border:1px solid #e2e8f0;border-radius:12px;padding:8px;background:#fff;" />
+        </div>
+        <input type="text" id="inviteUrlInput" class="form-input" readonly style="text-align:center;margin-bottom:12px;font-size:0.82rem;" />
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
           <button class="btn-primary-blue" onclick="copyStudentLink()">📋 คัดลอกลิงก์ให้ผู้เข้าสอบ</button>
           <button class="btn-outline" onclick="closeModal('inviteModal'); toggleStudentPortalMode();">📱 ทดลองทำข้อสอบในฐานะผู้เข้าสอบ</button>
@@ -736,16 +737,16 @@ True / False
         <div class="form-group">
           <label>1. ลิงก์ไฟล์ Google Sheet ของคุณ (สำหรับเปิดดูตารางข้อมูล)</label>
           <div style="display:flex;gap:8px;">
-            <input type="url" id="settingSheetDocUrl" class="form-input" value="https://docs.google.com/spreadsheets/u/0/" placeholder="https://docs.google.com/spreadsheets/d/..." />
-            <a href="https://docs.google.com/spreadsheets/u/0/" target="_blank" class="btn-outline" style="text-decoration:none;white-space:nowrap;">เปิด Google Sheets ↗</a>
+            <input type="url" id="settingSheetDocUrl" class="form-input" value="https://docs.google.com/spreadsheets/d/1vPV2GXeJLxlCXrMkbHUSVWUZyLSDT4SnjjhxOEIALGQ/edit" placeholder="https://docs.google.com/spreadsheets/d/..." />
+            <a href="https://docs.google.com/spreadsheets/d/1vPV2GXeJLxlCXrMkbHUSVWUZyLSDT4SnjjhxOEIALGQ/edit" target="_blank" class="btn-outline" style="text-decoration:none;white-space:nowrap;">เปิด Google Sheets ↗</a>
           </div>
         </div>
 
         <div class="form-group">
-          <label>2. Google Apps Script Web App URL (เชื่อมต่ออยู่แล้วพร้อมใช้งานทันที)</label>
-          <input type="url" id="settingGasWebAppUrl" class="form-input" value="https://script.google.com/macros/s/AKfycby3V0oPb2vz7qu2b-RXjCqjMYtdEiySGYcnDmh375IbJBfjS8DTJQ-4z0hOSO0gXL1B/exec" placeholder="https://script.google.com/macros/s/XXXX/exec" />
+          <label>2. Google Apps Script Web App URL (ใช้ซิงค์ข้อสอบและคะแนนข้ามอุปกรณ์)</label>
+          <input type="url" id="settingGasWebAppUrl" class="form-input" value="https://script.google.com/macros/s/AKfycbzSEMEiZ33E0FEhCmQmgsxueaTijfJNXDG_R_B54ix59EBRBN0TcSa3VfWSM1LbrCkE/exec" placeholder="https://script.google.com/macros/s/XXXX/exec" />
           <small style="display:block;color:#64748b;margin-top:4px;line-height:1.4;">
-            * เชื่อมต่อกับ Apps Script ที่มีอยู่ในระบบเรียบร้อยแล้ว (หรือหากต้องการเปลี่ยนไปใช้ชีตใหม่ สามารถนำโค้ดจาก <code>google-apps-script/Code.gs</code> ไปวางใน Apps Script แล้วนำ URL มาใส่แทนได้ทุกเมื่อ)
+            * สำคัญสำหรับการใช้งานข้ามเครื่อง (PC + มือถือ): ในหน้าต่าง Google Apps Script เมนู <b>Deploy > Manage deployments</b> ต้องตั้งค่า <b>Who has access (ผู้ที่มีสิทธิ์เข้าถึง) = Anyone (ทุกคน)</b> เพื่อให้มือถือของผู้เข้าสอบดึงข้อสอบและส่งคะแนนเข้า Google Sheet ได้โดยไม่ต้องล็อกอิน
           </small>
         </div>
 
@@ -755,7 +756,7 @@ True / False
         </div>
 
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:0.84rem;color:#334155;">
-          <b>สถานะการเชื่อมต่อ:</b> <span id="settingsTestStatus">พร้อมใช้งาน (Local + Google Sheets Hybrid)</span>
+          <b>สถานะการเชื่อมต่อ:</b> <span id="settingsTestStatus">พร้อมใช้งาน (URL Embedded Exam + Google Sheets Hybrid)</span>
         </div>
       </div>
       <div class="modal-footer">
