@@ -2005,12 +2005,16 @@ async function studentEnterRoom() {
     };
     appState.responses.push(existing);
     saveAppState();
-    // แจ้ง Google Sheets ทันทีว่าผู้เข้าสอบคนนี้เข้าห้องสอบแล้ว (ขึ้นชื่อบนจอ Live Results ทันที)
-    if (quiz) syncStudentResponseToGoogleSheet(existing, quiz);
   } else {
+    existing.roomCode = room;
+    existing.sessionId = session.id;
     currentStudent.answers = existing.answers || {};
+    saveAppState();
   }
+  // แจ้ง Google Sheets ทันทีทุกครั้งที่ผู้เข้าสอบกดเข้าห้องสอบ เพื่อให้ชื่อขึ้นที่หน้าจอ Live Results ทันที
+  if (quiz) syncStudentResponseToGoogleSheet(existing, quiz);
 
+  currentStudent.selectedOption = currentStudent.answers[0]?.value || '';
   document.getElementById('studentLoginStep').style.display = 'none';
   document.getElementById('studentDoneStep').style.display = 'none';
   document.getElementById('studentQuizStep').style.display = 'block';
@@ -2031,7 +2035,9 @@ function renderStudentCurrentQuestion() {
   document.getElementById('stuPrevBtn').style.visibility = qIdx > 0 ? 'visible' : 'hidden';
 
   const prevAns = currentStudent.answers[qIdx]?.value || '';
-  currentStudent.selectedOption = prevAns;
+  if (!currentStudent.selectedOption) {
+    currentStudent.selectedOption = prevAns;
+  }
 
   const container = document.getElementById('stuQuestionContainer');
 
@@ -2043,7 +2049,7 @@ function renderStudentCurrentQuestion() {
       const cleanOpt = String(opt).replace(/^[A-E][\.\)\s]+/i, '');
       const selectedClass = currentStudent.selectedOption === letter ? 'selected' : '';
       return `
-        <button class="student-option-btn ${selectedClass}" onclick="studentSelectOption('${letter}')">
+        <button type="button" class="student-option-btn ${selectedClass}" data-optval="${letter}" onclick="studentSelectOption('${letter}')">
           <span class="option-letter-badge">${letter}</span>
           <span>${escapeHtml(cleanOpt)}</span>
         </button>
@@ -2053,7 +2059,7 @@ function renderStudentCurrentQuestion() {
     inputHtml = ['True', 'False'].map(val => {
       const selectedClass = currentStudent.selectedOption === val ? 'selected' : '';
       return `
-        <button class="student-option-btn ${selectedClass}" onclick="studentSelectOption('${val}')">
+        <button type="button" class="student-option-btn ${selectedClass}" data-optval="${val}" onclick="studentSelectOption('${val}')">
           <span class="option-letter-badge">${val.charAt(0)}</span>
           <span>${val === 'True' ? 'True (ถูก / ใช่)' : 'False (ผิด / ไม่ใช่)'}</span>
         </button>
@@ -2064,7 +2070,7 @@ function renderStudentCurrentQuestion() {
       <div class="form-group" style="margin-top:12px;">
         <label>พิมพ์คำตอบของคุณ:</label>
         <input type="text" id="stuShortAnswerInput" class="form-input" placeholder="พิมพ์คำตอบที่นี่..."
-          value="${escapeHtml(prevAns)}"
+          value="${escapeHtml(currentStudent.selectedOption || prevAns)}"
           oninput="currentStudent.selectedOption = this.value" />
       </div>
     `;
@@ -2080,7 +2086,9 @@ function renderStudentCurrentQuestion() {
 
 function studentSelectOption(val) {
   currentStudent.selectedOption = val;
-  renderStudentCurrentQuestion();
+  document.querySelectorAll('#stuQuestionContainer .student-option-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.getAttribute('data-optval') === val);
+  });
 }
 
 function studentNavQuestion(delta) {
@@ -2089,6 +2097,7 @@ function studentNavQuestion(delta) {
   const next = currentStudent.currentIndex + delta;
   if (next >= 0 && next < quiz.questions.length) {
     currentStudent.currentIndex = next;
+    currentStudent.selectedOption = currentStudent.answers[next]?.value || '';
     renderStudentCurrentQuestion();
   }
 }
@@ -2102,7 +2111,16 @@ function studentSubmitCurrentAnswer() {
   const qIdx = currentStudent.currentIndex;
   const q = quiz.questions[qIdx];
 
-  const val = String(currentStudent.selectedOption || '').trim();
+  // ตรวจสอบทั้งจากตัวแปร selectedOption, ปุ่มที่มีคลาส .selected หรือช่องพิมพ์คำตอบ
+  let val = String(currentStudent.selectedOption || '').trim();
+  if (!val) {
+    const selectedBtn = document.querySelector('#stuQuestionContainer .student-option-btn.selected');
+    if (selectedBtn) val = selectedBtn.getAttribute('data-optval') || '';
+  }
+  if (!val) {
+    const shortInput = document.getElementById('stuShortAnswerInput');
+    if (shortInput) val = shortInput.value.trim();
+  }
   if (!val) return showToast('กรุณาเลือกหรือพิมพ์คำตอบก่อนกดส่ง');
 
   const isCorrect = checkAnswerCorrectness(q, val);
@@ -2138,6 +2156,7 @@ function studentSubmitCurrentAnswer() {
 
   if (qIdx + 1 < quiz.questions.length) {
     currentStudent.currentIndex++;
+    currentStudent.selectedOption = currentStudent.answers[currentStudent.currentIndex]?.value || '';
     renderStudentCurrentQuestion();
   } else {
     document.getElementById('studentQuizStep').style.display = 'none';
@@ -2281,27 +2300,54 @@ async function manualSyncFromGoogleSheet() {
 }
 
 async function pollLiveFromGoogleSheet(notify = false) {
-  if (!appSettings.gasWebAppUrl || !appState.activeSession) return;
+  if (!appSettings.gasWebAppUrl) return;
+  const activeRoom = String(appSettings.roomCode || appState.activeSession?.roomCode || 'THANAT01').toUpperCase().trim();
   const data = await callGoogleScript({
-    action: 'getLiveSessionData',
-    session_id: appState.activeSession.id,
-    room_code: appSettings.roomCode
+    action: 'getAllData'
   });
   if (data && data.status === 'ok') {
-    if (data.quiz && data.quiz.id) {
-      const qIdx = appState.quizzes.findIndex(q => q.id === data.quiz.id);
-      if (qIdx !== -1) appState.quizzes[qIdx] = data.quiz;
-      else appState.quizzes.unshift(data.quiz);
+    if (Array.isArray(data.quizzes) && data.quizzes.length > 0) {
+      data.quizzes.forEach(remoteQ => {
+        if (!remoteQ || !remoteQ.id) return;
+        const qIdx = appState.quizzes.findIndex(q => q.id === remoteQ.id);
+        if (qIdx !== -1) appState.quizzes[qIdx] = remoteQ;
+        else appState.quizzes.push(remoteQ);
+      });
     }
-    if (data.session && data.session.id) {
-      appState.activeSession = data.session;
+    if (Array.isArray(data.sessions) && data.sessions.length > 0) {
+      const roomSessions = data.sessions.filter(s =>
+        String(s.roomCode).toUpperCase() === activeRoom && s.status !== 'finished'
+      );
+      if (roomSessions.length > 0) {
+        const latestSess = roomSessions[roomSessions.length - 1];
+        // หาก quizId ใน session บนชีตมีอยู่ในเครื่องหรือดึงมาได้ ให้อัปเดต session ตามนั้น
+        if (appState.quizzes.some(q => q.id === latestSess.quizId)) {
+          appState.activeSession = latestSess;
+        } else if (appState.activeSession) {
+          appState.activeSession.id = latestSess.id;
+        }
+      }
     }
     if (Array.isArray(data.responses)) {
-      const otherResponses = appState.responses.filter(r =>
-        r.sessionId !== appState.activeSession.id &&
-        String(r.roomCode).toUpperCase() !== String(appSettings.roomCode).toUpperCase()
-      );
-      appState.responses = otherResponses.concat(data.responses);
+      // รวมข้อมูลผู้เข้าสอบจาก Google Sheets เข้ากับหน้าจอ Live Results ทันที (จับคู่ตามชื่อผู้เข้าสอบและห้องสอบ)
+      data.responses.forEach(remoteResp => {
+        if (!remoteResp) return;
+        const rRoom = String(remoteResp.roomCode || '').toUpperCase().trim();
+        const rStuId = String(remoteResp.studentId || '');
+        const existingIdx = appState.responses.findIndex(localR =>
+          String(localR.studentId) === rStuId &&
+          (String(localR.roomCode || '').toUpperCase().trim() === rRoom || localR.sessionId === remoteResp.sessionId)
+        );
+        if (existingIdx !== -1) {
+          const localAnsCount = Object.keys(appState.responses[existingIdx].answers || {}).length;
+          const remoteAnsCount = Object.keys(remoteResp.answers || {}).length;
+          if (remoteAnsCount >= localAnsCount) {
+            appState.responses[existingIdx] = remoteResp;
+          }
+        } else {
+          appState.responses.push(remoteResp);
+        }
+      });
     }
     if (Array.isArray(data.rooms) && data.rooms.length > 0) {
       data.rooms.forEach(remoteRoom => {
@@ -2314,7 +2360,7 @@ async function pollLiveFromGoogleSheet(notify = false) {
       });
     }
     saveAppState(false);
-    if (notify) showToast('✅ ซิงค์ข้อมูลจาก Google Sheets เรียบร้อยแล้ว!');
+    if (notify) showToast('✅ ซิงค์รายชื่อผู้เข้าสอบและผลคะแนนจาก Google Sheets เรียบร้อยแล้ว!');
   }
 }
 
