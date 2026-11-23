@@ -9,16 +9,20 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- SheetJS (Excel .xlsx/.xls/.csv) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- Mammoth.js (Word .docx) -->
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
   <!-- PDF.js (PDF text extraction) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- jsPDF + html2canvas + JSZip (Individual Student PDFs, Summary PDF & Answer Key PDF) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <!-- LZ-String (Compress Exam Data into Student URL for 100% instant mobile loading) -->
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=20261123" />
 </head>
 <body>
 
@@ -118,25 +122,28 @@
         </div>
 
         <div class="launch-main-circles">
-          <!-- Exam / Quiz -->
+          <!-- Exam / Quiz (Icon matches Instant Feedback in Launch Settings) -->
           <button class="launch-item" onclick="openLaunchQuizModal('quiz')">
             <div class="launch-circle">
-              <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <path d="M9 11l3 3L22 4"></path>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
+                <path d="M7 9l2 2m0-2l-2 2"></path>
+                <line x1="12" y1="10" x2="17" y2="10"></line>
+                <path d="M6.8 15.2l1.2 1.2 2.2-2.4"></path>
+                <line x1="12" y1="15" x2="17" y2="15"></line>
               </svg>
             </div>
             <span class="launch-label">Start Exam / Quiz<br><small style="font-size:0.8rem;color:#64748b;">เปิดสอบออนไลน์</small></span>
           </button>
 
-          <!-- Team Challenge -->
+          <!-- Team Challenge (Rocket icon matches Team Challenge in Launch Settings) -->
           <button class="launch-item" onclick="openLaunchQuizModal('team')">
             <div class="launch-circle">
-              <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+                <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
+                <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
               </svg>
             </div>
             <span class="launch-label">Team<br>Challenge</span>
@@ -145,7 +152,7 @@
           <!-- Exit Ticket / Post-Training Survey -->
           <button class="launch-item" onclick="launchExitTicket()">
             <div class="launch-circle">
-              <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <path d="m9 15 2 2 4-4"></path>
@@ -297,11 +304,32 @@
 
     <!-- 3. LIVE RESULTS TAB -->
     <section id="view-live" class="view-section">
-      <div class="live-results-card">
+      <!-- Empty State (Matches Image 4 when no active activity or after export completed) -->
+      <div class="live-empty-state" id="liveEmptyState" style="display:none;">
+        <div class="live-empty-hexagon">
+          <svg width="110" height="110" viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M55 6L98 30.5V79.5L55 104L12 79.5V30.5L55 6Z" fill="#eef2f6"/>
+            <path d="M36 74C36 70.6863 38.6863 68 42 68C45.3137 68 48 70.6863 48 74C48 77.3137 45.3137 80 42 80C38.6863 80 36 77.3137 36 74Z" fill="#ffffff"/>
+            <path d="M37 56C49.7025 56 60 66.2975 60 79" stroke="#ffffff" stroke-width="7.5" stroke-linecap="round"/>
+            <path d="M37 40C58.5391 40 76 57.4609 76 79" stroke="#ffffff" stroke-width="7.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2 class="live-empty-title">Live Results</h2>
+        <p class="live-empty-desc">
+          You'll see live results for your room's current activity here. Launch a new activity to get started!
+        </p>
+        <button class="btn-launch-activity" onclick="switchTab('launch')">
+          Launch Activity
+        </button>
+      </div>
+
+      <!-- Active Live Results Card -->
+      <div class="live-results-card" id="liveActiveContent">
         <div class="live-header-row">
           <div class="live-quiz-title-wrap">
             <h2 class="live-quiz-title" id="liveQuizTitle">แบบวัดผลการปฐมนิเทศ พนักงานรายวัน 25 ข้อ</h2>
             <span class="soc-code-pill" id="liveRoomPill" style="background:#dbeafe;color:#1e40af;font-size:0.82rem;">ห้อง: THANAT01</span>
+            <span class="soc-code-pill" id="liveMethodPill" style="background:#f0f9ff;color:#0369a1;font-size:0.78rem;">Instant Feedback</span>
             <span class="info-circle-icon" title="ซิงค์ข้อมูลแบบ Real-time กับ Google Sheets">i</span>
             <span id="liveStatusPill" class="soc-code-pill" style="background:#dcfce7;color:#166534;font-size:0.76rem;">● LIVE</span>
           </div>
@@ -321,6 +349,21 @@
             </button>
           </div>
         </div>
+
+        <!-- Teacher Paced Controls Bar (visible only in Teacher Paced mode) -->
+        <div id="teacherPacedBar" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 16px;margin-bottom:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="soc-code-pill" style="background:#0284c7;color:#fff;">👨‍🏫 Teacher Paced</span>
+            <span id="teacherPacedQuestionLabel" style="font-weight:700;color:#0f172a;font-size:0.92rem;">กำลังแสดงข้อที่ 1</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-outline" style="padding:6px 12px;font-size:0.84rem;" onclick="teacherPaceMove(-1)">◀ ข้อก่อนหน้า</button>
+            <button class="btn-primary-blue" style="padding:6px 14px;font-size:0.84rem;" onclick="teacherPaceMove(1)">ข้อถัดไป ▶</button>
+          </div>
+        </div>
+
+        <!-- Team Challenge Live Progress Bar (visible only in Team Challenge mode) -->
+        <div id="teamChallengeBar" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:16px;"></div>
 
         <!-- 3 Green Toggles (Show Names, Show Responses, Show Results) -->
         <div class="live-toggles-row">
@@ -432,19 +475,113 @@
       </div>
     </section>
 
-    <!-- 5. REPORTS TAB -->
+    <!-- 5. REPORTS TAB (LIST VIEW + REPORT DETAIL VIEW MATCHING IMAGE 3) -->
     <section id="view-reports" class="view-section">
-      <div class="library-header">
-        <div>
-          <h1 class="library-title">Reports & Export</h1>
-          <p style="font-size:0.88rem;color:#6b7280;">ดาวน์โหลดผลคะแนนเป็นไฟล์ Excel (.xlsx) หรือส่งข้อมูลเข้า Google Sheets</p>
+      <!-- Reports List View -->
+      <div id="reportsListView">
+        <div class="library-header">
+          <div>
+            <h1 class="library-title">Reports</h1>
+            <p style="font-size:0.88rem;color:#6b7280;">คลิกที่รายงานผลสอบเพื่อดูรายละเอียด ดาวน์โหลด Excel (หัวข้อข้อสอบครบทุกตัวอักษร) หรือส่งออก PDF รายบุคคล</p>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-primary-blue" onclick="syncAllToGoogleSheets()">☁️ บันทึกทุกชุดข้อสอบและห้องสอบลง Google Sheets</button>
+          </div>
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn-outline" onclick="exportCurrentReportToExcel()">📊 ดาวน์โหลดผลสอบเป็น Excel (.xlsx)</button>
-          <button class="btn-primary-blue" onclick="syncAllToGoogleSheets()">☁️ บันทึกทุกชุดข้อสอบและห้องสอบลง Google Sheets</button>
+        <div class="quiz-list-card" id="reportsListContainer"></div>
+      </div>
+
+      <!-- Report Detail View (Matches Image 3 background) -->
+      <div id="reportDetailView" style="display:none;">
+        <div class="report-back-row">
+          <button class="report-back-btn" onclick="showReportsListView()">
+            ‹ Reports
+          </button>
+        </div>
+
+        <div class="report-detail-header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <h1 class="report-detail-title" id="reportDetailTitle">EXAM REPORT</h1>
+              <span class="info-circle-icon" id="reportDetailRoomInfo" title="รายละเอียดห้องสอบ">i</span>
+            </div>
+            <div class="report-detail-date" id="reportDetailDate"></div>
+          </div>
+
+          <div class="report-header-actions">
+            <button class="btn-report-cyan-soft" onclick="emailResultsToStudents()">Email Results to Students</button>
+            <button class="btn-report-cyan" onclick="openExportResultsModal()">Export Results</button>
+          </div>
+        </div>
+
+        <!-- Report Sub-tabs -->
+        <div class="report-subtabs">
+          <button class="report-subtab active" id="reportSubTab-overview" onclick="switchReportSubTab('overview')">Overview</button>
+          <button class="report-subtab" id="reportSubTab-monitoring" onclick="switchReportSubTab('monitoring')">Activity Monitoring</button>
+        </div>
+
+        <!-- Overview Panel -->
+        <div id="reportOverviewPanel">
+          <!-- Stat Cards Row -->
+          <div class="report-stat-cards">
+            <div class="report-stat-card">
+              <div class="report-stat-value" id="reportStatStudents">0 students</div>
+              <div class="report-stat-sub" id="reportStatRoomLabel">Room: THANAT01</div>
+            </div>
+            <div class="report-stat-card">
+              <div class="report-stat-value" id="reportStatAvgScore">0%</div>
+              <div class="report-stat-sub">Class Average Score</div>
+            </div>
+            <div class="report-stat-card">
+              <div class="report-stat-value" id="reportStatPassValue">Pass Rate</div>
+              <div class="report-stat-sub">
+                <a href="javascript:void(0)" onclick="setReportPassRate()" style="color:#0284c7;font-weight:600;text-decoration:none;" id="reportPassRateLink">Set</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Toggles Row -->
+          <div class="live-toggles-row" style="margin-top:20px;margin-bottom:16px;">
+            <label class="soc-toggle-label">
+              <input type="checkbox" class="soc-toggle-input" id="reportToggleShowNames" checked onchange="renderReportDetailMatrix()" />
+              <span class="soc-switch"></span>
+              <span>Show Names</span>
+            </label>
+
+            <label class="soc-toggle-label">
+              <input type="checkbox" class="soc-toggle-input" id="reportToggleShowResponses" checked onchange="renderReportDetailMatrix()" />
+              <span class="soc-switch"></span>
+              <span>Show Responses</span>
+            </label>
+
+            <label class="soc-toggle-label">
+              <input type="checkbox" class="soc-toggle-input" id="reportToggleShowResults" checked onchange="renderReportDetailMatrix()" />
+              <span class="soc-switch"></span>
+              <span>Show Results</span>
+            </label>
+          </div>
+
+          <!-- Matrix Table -->
+          <div class="live-results-card" style="padding:18px;">
+            <div class="live-matrix-scroll">
+              <table class="live-matrix-table">
+                <thead id="reportTableHead"></thead>
+                <tbody id="reportTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Monitoring Sub-tab Panel -->
+        <div id="reportMonitoringPanel" style="display:none;">
+          <div class="live-results-card" style="padding:20px;">
+            <h3 style="font-size:1.05rem;font-weight:700;color:#1e293b;margin-bottom:12px;">
+              🛡️ Activity Monitoring Log (บันทึกการสลับหน้าจอ / ออกจากหน้าสอบ)
+            </h3>
+            <div id="reportMonitoringTableWrap"></div>
+          </div>
         </div>
       </div>
-      <div class="quiz-list-card" id="reportsListContainer"></div>
     </section>
 
     <!-- 6. STUDENT / EXAMINEE MOBILE VIEW -->
@@ -470,9 +607,22 @@
             <input type="text" id="stuRoomInput" list="availableRoomsDatalist" class="form-input" value="THANAT01" placeholder="พิมพ์รหัสห้อง เช่น THANAT01" style="text-transform:uppercase;font-weight:700;" />
             <datalist id="availableRoomsDatalist"></datalist>
           </div>
-          <div class="form-group">
-            <label>รหัสพนักงาน และ ชื่อ - นามสกุล (Employee ID & Name)</label>
+          <div class="form-group" id="stuNameGroup">
+            <label id="stuNameLabel">รหัสพนักงาน และ ชื่อ - นามสกุล (Employee ID & Name)</label>
             <input type="text" id="stuNameInput" class="form-input" placeholder="เช่น 056894 Thanat" />
+          </div>
+          <div class="form-group" id="stuTeamSelectGroup" style="display:none;">
+            <label>เลือกทีมสำหรับกิจกรรม Team Challenge</label>
+            <select id="stuTeamSelect" class="form-select">
+              <option value="Blue Team">🔵 Blue Team</option>
+              <option value="Green Team">🟢 Green Team</option>
+              <option value="Orange Team">🟠 Orange Team</option>
+              <option value="Purple Team">🟣 Purple Team</option>
+            </select>
+          </div>
+          <div class="form-group" id="stuPasscodeGroup" style="display:none;">
+            <label>รหัสผ่านเข้าสอบ (Exam Passcode)</label>
+            <input type="text" id="stuPasscodeInput" class="form-input" placeholder="กรอกรหัสผ่านจากผู้คุมสอบ" />
           </div>
           <button class="btn-primary-blue" id="stuJoinBtn" style="width:100%;justify-content:center;padding:12px;" onclick="studentEnterRoom()">
             เข้าสู่ห้องสอบ (Join Exam Room)
@@ -481,20 +631,35 @@
 
         <!-- Step 2: Active Question -->
         <div class="student-card" id="studentQuizStep" style="display:none;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;gap:8px;flex-wrap:wrap;">
             <div>
               <div id="stuQuizTitleDisplay" style="font-weight:700;font-size:1rem;color:#0f172a;">แบบวัดผลการปฐมนิเทศ พนักงานรายวัน 25 ข้อ</div>
               <div id="stuDisplayName" style="font-size:0.8rem;color:#64748b;"></div>
             </div>
-            <span id="stuProgressBadge" class="soc-code-pill" style="background:#e0f2fe;color:#0369a1;white-space:nowrap;">ข้อ 1 / 25</span>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span id="stuTimerBadge" class="soc-code-pill" style="display:none;background:#fef3c7;color:#92400e;font-weight:700;">⏱ 15:00</span>
+              <span id="stuMonitoringBadge" class="soc-code-pill" style="display:none;background:#fee2e2;color:#991b1b;font-size:0.74rem;">🛡️ Monitoring</span>
+              <span id="stuProgressBadge" class="soc-code-pill" style="background:#e0f2fe;color:#0369a1;white-space:nowrap;">ข้อ 1 / 25</span>
+            </div>
+          </div>
+
+          <!-- Open Navigation question selector pills -->
+          <div id="stuOpenNavBar" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;"></div>
+
+          <!-- Teacher Paced notice -->
+          <div id="stuTeacherPacedBanner" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-weight:600;margin-bottom:12px;">
+            👨‍🏫 โหมด Teacher Paced — ผู้คุมสอบเป็นผู้ควบคุมลำดับข้อคำถาม
           </div>
 
           <div id="stuQuestionContainer"></div>
 
-          <div style="display:flex;justify-content:space-between;gap:10px;margin-top:20px;">
+          <div style="display:flex;justify-content:space-between;gap:10px;margin-top:20px;flex-wrap:wrap;">
             <button class="btn-outline" id="stuPrevBtn" onclick="studentNavQuestion(-1)">⬅ ข้อก่อนหน้า</button>
             <button class="btn-primary-blue" id="stuSubmitBtn" style="flex:1;justify-content:center;background:var(--soc-orange);" onclick="studentSubmitCurrentAnswer()">
               ส่งคำตอบ (Submit Answer)
+            </button>
+            <button class="btn-primary-blue" id="stuFinishAllBtn" style="display:none;width:100%;justify-content:center;background:#16a34a;" onclick="studentFinishOpenNavQuiz()">
+              ✅ ส่งข้อสอบทั้งหมด (Finish Quiz)
             </button>
           </div>
         </div>
@@ -507,7 +672,7 @@
           <p style="font-size:0.85rem;color:#64748b;margin-bottom:20px;">
             คะแนนและคำตอบของคุณถูกส่งไปยังหน้าจอ Live Results และบันทึกลงฐานข้อมูล Google Sheets เรียบร้อยแล้ว
           </p>
-          <button class="btn-outline" style="width:100%;justify-content:center;" onclick="studentResetToLogin()">
+          <button class="btn-outline" id="stuResetBtn" style="width:100%;justify-content:center;" onclick="studentResetToLogin()">
             สลับผู้เข้าสอบ / ทำอีกครั้ง
           </button>
         </div>
@@ -666,35 +831,235 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 2: LAUNCH QUIZ SELECTOR ================= -->
+  <!-- ================= MODAL 2: LAUNCH QUIZ SETTINGS (MATCHES IMAGE 2 — ALL UNLOCKED, NO PRO) ================= -->
   <div class="modal-backdrop" id="launchQuizModal">
-    <div class="modal-dialog" style="max-width:540px;">
+    <div class="modal-dialog" style="max-width:860px;">
       <div class="modal-header">
-        <div class="modal-title" id="launchModalTitle">เลือกชุดข้อสอบและห้องสอบที่ต้องการเปิดสอบ</div>
+        <div class="modal-title" id="launchModalTitle">🚀 Launch Exam / Quiz Settings</div>
         <button class="modal-close-btn" onclick="closeModal('launchQuizModal')">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>1. เลือกห้องสอบ (Room Code) ที่ต้องการเปิดสอบ</label>
-          <select id="launchSelectRoomCode" class="form-select"></select>
+      <div class="modal-body" style="padding:20px 24px;">
+        <!-- Room & Quiz Selection Row -->
+        <div class="launch-top-selectors">
+          <div class="form-group" style="margin-bottom:0;">
+            <label>ห้องสอบ (Room Code)</label>
+            <select id="launchSelectRoomCode" class="form-select"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>ชุดข้อสอบ (Exam / Quiz)</label>
+            <select id="launchSelectQuizId" class="form-select"></select>
+          </div>
         </div>
-        <div class="form-group">
-          <label>2. เลือกชุดข้อสอบจากคลัง (Exam Library)</label>
-          <select id="launchSelectQuizId" class="form-select"></select>
-        </div>
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
-          <div style="font-weight:600;margin-bottom:10px;font-size:0.9rem;">ตั้งค่าการแสดงผลเมื่อเริ่มสอบ</div>
-          <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;margin-bottom:8px;">
-            <input type="checkbox" id="launchSettingInstantFeedback" checked /> แสดงผลตรวจคำตอบทันทีที่ผู้เข้าสอบส่งแต่ละข้อ
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
-            <input type="checkbox" id="launchSettingShuffle" /> สุ่มลำดับข้อสอบ
-          </label>
+
+        <!-- 2-Column Layout matching Image 2 -->
+        <div class="launch-settings-grid">
+          <!-- LEFT COLUMN: Delivery Method -->
+          <div>
+            <div class="launch-col-heading">Delivery Method</div>
+
+            <div class="delivery-method-list" id="deliveryMethodList">
+              <!-- 1. Instant Feedback (icon matches Start Exam/Quiz on Launch page) -->
+              <label class="delivery-method-card selected" data-method="instant_feedback" onclick="selectDeliveryMethod('instant_feedback')">
+                <input type="radio" name="launchDeliveryMethod" value="instant_feedback" checked style="display:none;" />
+                <div class="dm-icon-box">
+                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
+                    <path d="M7 9l2 2m0-2l-2 2"></path>
+                    <line x1="12" y1="10" x2="17" y2="10"></line>
+                    <path d="M6.8 15.2l1.2 1.2 2.2-2.4"></path>
+                    <line x1="12" y1="15" x2="17" y2="15"></line>
+                  </svg>
+                </div>
+                <div class="dm-text-wrap">
+                  <div class="dm-title">Instant Feedback</div>
+                  <div class="dm-desc">Students work independently with feedback after each question</div>
+                </div>
+                <span class="dm-radio-dot"></span>
+              </label>
+
+              <!-- 2. Open Navigation -->
+              <label class="delivery-method-card" data-method="open_navigation" onclick="selectDeliveryMethod('open_navigation')">
+                <input type="radio" name="launchDeliveryMethod" value="open_navigation" style="display:none;" />
+                <div class="dm-icon-box">
+                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
+                    <polygon points="15.5 8.5 13 13 8.5 15.5 11 11 15.5 8.5"></polygon>
+                  </svg>
+                </div>
+                <div class="dm-text-wrap">
+                  <div class="dm-title">Open Navigation</div>
+                  <div class="dm-desc">Students can review and change answers before submitting</div>
+                </div>
+                <span class="dm-radio-dot"></span>
+              </label>
+
+              <!-- 3. Teacher Paced -->
+              <label class="delivery-method-card" data-method="teacher_paced" onclick="selectDeliveryMethod('teacher_paced')">
+                <input type="radio" name="launchDeliveryMethod" value="teacher_paced" style="display:none;" />
+                <div class="dm-icon-box">
+                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
+                    <circle cx="9" cy="10" r="2"></circle>
+                    <path d="M6.5 16c0-1.6 1.2-2.5 2.5-2.5s2.5.9 2.5 2.5"></path>
+                    <line x1="13.5" y1="9.5" x2="18" y2="9.5"></line>
+                    <line x1="13.5" y1="13" x2="17" y2="13"></line>
+                  </svg>
+                </div>
+                <div class="dm-text-wrap">
+                  <div class="dm-title">Teacher Paced</div>
+                  <div class="dm-desc">You control the question pace</div>
+                </div>
+                <span class="dm-radio-dot"></span>
+              </label>
+
+              <!-- 4. Team Challenge (Rocket icon matches Team Challenge on Launch page) -->
+              <label class="delivery-method-card" data-method="team_challenge" onclick="selectDeliveryMethod('team_challenge')">
+                <input type="radio" name="launchDeliveryMethod" value="team_challenge" style="display:none;" />
+                <div class="dm-icon-box">
+                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+                    <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+                    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
+                    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
+                  </svg>
+                </div>
+                <div class="dm-text-wrap">
+                  <div class="dm-title">Team Challenge</div>
+                  <div class="dm-desc">Teams work together to answer each question correctly. Project live progress for the class.</div>
+                </div>
+                <span class="dm-radio-dot"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Settings (All unlocked, zero PRO/ORG blocks) -->
+          <div>
+            <div class="launch-col-heading">Settings</div>
+
+            <div class="settings-card-group">
+              <div class="settings-row">
+                <span class="settings-row-label">Require Names</span>
+                <label class="soc-toggle-label">
+                  <input type="checkbox" class="soc-toggle-input" id="launchSettingRequireNames" checked />
+                  <span class="soc-switch"></span>
+                </label>
+              </div>
+
+              <div class="settings-row">
+                <span class="settings-row-label">Shuffle Questions</span>
+                <label class="soc-toggle-label">
+                  <input type="checkbox" class="soc-toggle-input" id="launchSettingShuffle" />
+                  <span class="soc-switch"></span>
+                </label>
+              </div>
+
+              <div class="settings-row">
+                <span class="settings-row-label">Shuffle Answers</span>
+                <label class="soc-toggle-label">
+                  <input type="checkbox" class="soc-toggle-input" id="launchSettingShuffleAnswers" />
+                  <span class="soc-switch"></span>
+                </label>
+              </div>
+
+              <div class="settings-row">
+                <span class="settings-row-label">Show Question Feedback</span>
+                <label class="soc-toggle-label">
+                  <input type="checkbox" class="soc-toggle-input" id="launchSettingInstantFeedback" checked />
+                  <span class="soc-switch"></span>
+                </label>
+              </div>
+
+              <div class="settings-row">
+                <span class="settings-row-label">Show Final Score</span>
+                <label class="soc-toggle-label">
+                  <input type="checkbox" class="soc-toggle-input" id="launchSettingShowFinalScore" checked />
+                  <span class="soc-switch"></span>
+                </label>
+              </div>
+
+              <div class="settings-row">
+                <span class="settings-row-label">
+                  One Attempt
+                  <span class="info-badge-blue" title="จำกัดให้ผู้เข้าสอบแต่ละคนทำข้อสอบได้เพียง 1 ครั้งต่อรอบสอบ">i</span>
+                </span>
+                <label class="soc-toggle-label">
+                  <input type="checkbox" class="soc-toggle-input" id="launchSettingOneAttempt" />
+                  <span class="soc-switch"></span>
+                </label>
+              </div>
+
+              <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span class="settings-row-label">
+                    Time Limit
+                    <span class="info-badge-blue" title="กำหนดเวลาจำกัดในการทำข้อสอบ เมื่อหมดเวลาระบบส่งคำตอบอัตโนมัติ">i</span>
+                  </span>
+                  <label class="soc-toggle-label">
+                    <input type="checkbox" class="soc-toggle-input" id="launchSettingTimeLimit" onchange="toggleLaunchSubSetting('launchTimeLimitBox', this.checked)" />
+                    <span class="soc-switch"></span>
+                  </label>
+                </div>
+                <div id="launchTimeLimitBox" style="display:none;padding:6px 10px;background:#f0f9ff;border-radius:8px;align-items:center;gap:8px;font-size:0.84rem;">
+                  <span>จำกัดเวลา:</span>
+                  <input type="number" id="launchSettingTimeLimitMinutes" class="form-input" value="15" min="1" max="180" style="width:76px;padding:4px 8px;font-size:0.86rem;" />
+                  <span>นาที (Minutes)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Activity Monitoring Card (Unlocked, no PRO!) -->
+            <div class="settings-card-group" style="margin-top:12px;">
+              <div class="settings-row" style="border-bottom:1px solid #f1f5f9;">
+                <span class="settings-row-label">
+                  <svg width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="m9 12 2 2 4-4"></path>
+                  </svg>
+                  Activity Monitoring
+                  <span class="info-badge-blue" title="บันทึกการสลับแท็บหรือออกจากหน้าจอสอบของผู้เข้าสอบแบบ Real-time">i</span>
+                </span>
+                <label class="soc-toggle-label">
+                  <input type="checkbox" class="soc-toggle-input" id="launchSettingActivityMonitoring" />
+                  <span class="soc-switch"></span>
+                </label>
+              </div>
+              <div style="padding:10px 14px;font-size:0.8rem;color:#64748b;line-height:1.45;">
+                ติดตามและแจ้งเตือนทันทีเมื่อผู้เข้าสอบสลับแท็บหรือออกจากหน้าจอข้อสอบ พร้อมเก็บประวัติไว้ในหน้า Report
+              </div>
+            </div>
+
+            <!-- Restrictions Card (Unlocked, no ORG!) -->
+            <div class="settings-card-group" style="margin-top:12px;">
+              <div class="settings-row" style="border-bottom:none;">
+                <span class="settings-row-label">
+                  <svg width="18" height="18" fill="none" stroke="#0284c7" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <line x1="4" y1="4" x2="20" y2="20"></line>
+                  </svg>
+                  Restrictions
+                  <span class="info-badge-blue" title="ตั้งค่าข้อจำกัดการเข้าสอบ เช่น ป้องกันการคัดลอกโจทย์ หรือตั้งรหัสผ่านห้องสอบ">i</span>
+                </span>
+                <label class="soc-toggle-label">
+                  <input type="checkbox" class="soc-toggle-input" id="launchSettingRestrictions" onchange="toggleLaunchSubSetting('launchRestrictionsBox', this.checked)" />
+                  <span class="soc-switch"></span>
+                </label>
+              </div>
+              <div id="launchRestrictionsBox" style="display:none;padding:10px 14px;border-top:1px solid #f1f5f9;background:#f8fafc;flex-direction:column;gap:8px;font-size:0.82rem;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                  <input type="checkbox" id="launchSettingBlockCopy" checked /> ป้องกันการคัดลอกข้อความและคลิกขวาขณะทำข้อสอบ
+                </label>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="white-space:nowrap;">รหัสผ่านห้องสอบ (ไม่บังคับ):</span>
+                  <input type="text" id="launchSettingPasscode" class="form-input" placeholder="เช่น HANA2026" style="padding:5px 8px;font-size:0.82rem;" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" style="justify-content:space-between;">
         <button class="btn-outline" onclick="closeModal('launchQuizModal')">ยกเลิก</button>
-        <button class="btn-primary-blue" onclick="confirmLaunchSelectedQuiz()">🚀 เริ่มเปิดห้องสอบทันที (Start Exam)</button>
+        <button class="btn-launch-cyan" onclick="confirmLaunchSelectedQuiz()">Launch</button>
       </div>
     </div>
   </div>
@@ -726,11 +1091,11 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 4: GOOGLE SHEETS & AI SETTINGS ================= -->
+  <!-- ================= MODAL 4: GOOGLE SHEETS, DRIVE & AI SETTINGS ================= -->
   <div class="modal-backdrop" id="settingsModal">
     <div class="modal-dialog" style="max-width:680px;">
       <div class="modal-header">
-        <div class="modal-title">⚙️ ตั้งค่าฐานข้อมูล Google Sheets & Gemini AI (Hana Exam Online)</div>
+        <div class="modal-title">⚙️ ตั้งค่าฐานข้อมูล Google Sheets, Drive & Gemini AI</div>
         <button class="modal-close-btn" onclick="closeModal('settingsModal')">&times;</button>
       </div>
       <div class="modal-body">
@@ -743,20 +1108,28 @@
         </div>
 
         <div class="form-group">
-          <label>2. Google Apps Script Web App URL (ใช้ซิงค์ข้อสอบและคะแนนข้ามอุปกรณ์)</label>
+          <label>2. Google Apps Script Web App URL (ใช้ซิงค์ข้อสอบ, คะแนน และอัปโหลดรูปลง Google Drive)</label>
           <input type="url" id="settingGasWebAppUrl" class="form-input" value="https://script.google.com/macros/s/AKfycbzSEMEiZ33E0FEhCmQmgsxueaTijfJNXDG_R_B54ix59EBRBN0TcSa3VfWSM1LbrCkE/exec" placeholder="https://script.google.com/macros/s/XXXX/exec" />
           <small style="display:block;color:#64748b;margin-top:4px;line-height:1.4;">
-            * สำคัญสำหรับการใช้งานข้ามเครื่อง (PC + มือถือ): ในหน้าต่าง Google Apps Script เมนู <b>Deploy > Manage deployments</b> ต้องตั้งค่า <b>Who has access (ผู้ที่มีสิทธิ์เข้าถึง) = Anyone (ทุกคน)</b> เพื่อให้มือถือของผู้เข้าสอบดึงข้อสอบและส่งคะแนนเข้า Google Sheet ได้โดยไม่ต้องล็อกอิน
+            * สำคัญ: ใน Google Apps Script เมนู <b>Deploy > Manage deployments</b> ต้องตั้งค่า <b>Who has access = Anyone (ทุกคน)</b> และอัปเดตโค้ด <code>Code.gs</code> เวอร์ชันล่าสุดเพื่อเปิดใช้งานการสร้างโฟลเดอร์เก็บรูปใน Google Drive อัตโนมัติ
           </small>
         </div>
 
         <div class="form-group">
-          <label>3. Gemini API Key (สำหรับให้ AI ช่วยออกข้อสอบและสกัดข้อสอบจากไฟล์ Word/PDF ซับซ้อน)</label>
+          <label>3. โฟลเดอร์ Google Drive หลักสำหรับเก็บรูปประกอบข้อสอบ (สร้างโฟลเดอร์ย่อยตามชื่อข้อสอบอัตโนมัติ)</label>
+          <div style="display:flex;gap:8px;">
+            <input type="url" id="settingDriveFolderUrl" class="form-input" value="https://drive.google.com/drive/folders/1SMXkHtdsCvcNCMTfosakUcf7xnEMJdBE" readonly />
+            <a href="https://drive.google.com/drive/folders/1SMXkHtdsCvcNCMTfosakUcf7xnEMJdBE" target="_blank" class="btn-outline" style="text-decoration:none;white-space:nowrap;">เปิด Google Drive ↗</a>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>4. Gemini API Key (สำหรับให้ AI ช่วยออกข้อสอบและสกัดข้อสอบจากไฟล์ Word/PDF ซับซ้อน)</label>
           <input type="password" id="settingGeminiKey" class="form-input" placeholder="AIzaSy... (เว้นว่างได้ ระบบมีตัวแยกข้อสอบอัตโนมัติในตัว)" />
         </div>
 
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:0.84rem;color:#334155;">
-          <b>สถานะการเชื่อมต่อ:</b> <span id="settingsTestStatus">พร้อมใช้งาน (URL Embedded Exam + Google Sheets Hybrid)</span>
+          <b>สถานะการเชื่อมต่อ:</b> <span id="settingsTestStatus">พร้อมใช้งาน (URL Embedded Exam + Google Sheets & Drive Hybrid)</span>
         </div>
       </div>
       <div class="modal-footer">
@@ -766,9 +1139,182 @@
     </div>
   </div>
 
+  <!-- ================= MODAL 5: EXPORT RESULTS (MATCHES IMAGE 3 — ALL UNLOCKED) ================= -->
+  <div class="modal-backdrop" id="exportResultsModal">
+    <div class="modal-dialog export-modal-dialog">
+      <div class="export-modal-layout">
+        <!-- Left Sidebar -->
+        <aside class="export-sidebar">
+          <div class="export-sidebar-title">Export Results</div>
+          <button class="export-nav-item active" id="exportNav-excel" onclick="switchExportTab('excel')">
+            Complete Results Excel
+          </button>
+          <button class="export-nav-item" id="exportNav-individual-pdf" onclick="switchExportTab('individual-pdf')">
+            Individual Student PDFs
+          </button>
+          <button class="export-nav-item" id="exportNav-summary-pdf" onclick="switchExportTab('summary-pdf')">
+            Results Summary PDF
+          </button>
+          <button class="export-nav-item" id="exportNav-answer-key" onclick="switchExportTab('answer-key')">
+            Answer Key PDF
+          </button>
+        </aside>
+
+        <!-- Right Content Area -->
+        <div class="export-content-pane">
+          <button class="export-close-btn" onclick="closeModal('exportResultsModal')" title="ปิด">&times;</button>
+
+          <!-- Panel 1: Complete Results Excel -->
+          <div class="export-tab-panel active" id="exportPanel-excel">
+            <h3 class="export-panel-title">Complete Results Excel</h3>
+            <p class="export-panel-desc">
+              Export an Excel file of responses and scores for all students who took part in the activity. (ส่งออกหัวข้อข้อสอบครบทุกตัวอักษร พร้อมผลคะแนนและคำตอบรายข้อครบทั้งหมด)
+            </p>
+            <div class="export-option-row">
+              <span>Include Multiple-Choice Answer Content</span>
+              <label class="soc-toggle-label">
+                <input type="checkbox" class="soc-toggle-input" id="exportExcelIncludeMCContent" checked />
+                <span class="soc-switch"></span>
+              </label>
+            </div>
+            <div class="export-footer-btns">
+              <button class="btn-export-action" onclick="handleExportDownload('excel')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download
+              </button>
+              <button class="btn-export-action" onclick="handleExportEmail('excel')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                Email Me
+              </button>
+              <button class="btn-export-action" onclick="handleExportSaveToDrive('excel')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2 2 19h7l5-9 5 9h3L12 2z"/></svg>
+                Save to Drive
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel 2: Individual Student PDFs -->
+          <div class="export-tab-panel" id="exportPanel-individual-pdf" style="display:none;">
+            <h3 class="export-panel-title">Individual Student PDFs</h3>
+            <p class="export-panel-desc">
+              ส่งออกไฟล์ PDF ผลสอบรายบุคคลเหมือนต้นแบบ Socrative (แสดงโลโก้, ชื่อ-รหัสพนักงาน, ห้อง, วันที่, คะแนน %, ข้อสอบครบทุกข้อ, ตัวเลือกสีเขียว/แดง และรูปภาพประกอบข้อสอบ)
+            </p>
+            <div class="export-option-row" style="margin-bottom:10px;">
+              <span>Include Question Images (แสดงรูปประกอบข้อสอบ)</span>
+              <label class="soc-toggle-label">
+                <input type="checkbox" class="soc-toggle-input" id="exportPdfIncludeImages" checked />
+                <span class="soc-switch"></span>
+              </label>
+            </div>
+            <div class="export-option-row" style="margin-bottom:12px;">
+              <span>Show Correct Answers (แสดงเฉลยข้อที่ตอบผิด)</span>
+              <label class="soc-toggle-label">
+                <input type="checkbox" class="soc-toggle-input" id="exportPdfShowCorrect" checked />
+                <span class="soc-switch"></span>
+              </label>
+            </div>
+            <div style="margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-size:0.84rem;font-weight:700;color:#334155;">เลือกผู้เข้าสอบที่ต้องการส่งออก PDF:</span>
+                <label style="font-size:0.8rem;color:#0284c7;font-weight:600;cursor:pointer;">
+                  <input type="checkbox" id="exportPdfSelectAll" checked onchange="toggleSelectAllExportStudents(this.checked)" /> เลือกทั้งหมด
+                </label>
+              </div>
+              <div id="exportPdfStudentList" class="export-student-checklist"></div>
+            </div>
+            <div id="exportPdfProgressMsg" style="display:none;font-size:0.84rem;color:#0284c7;font-weight:600;margin-bottom:10px;"></div>
+            <div class="export-footer-btns">
+              <button class="btn-export-action" id="btnExportIndividualPdfDownload" onclick="handleExportDownload('individual-pdf')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download
+              </button>
+              <button class="btn-export-action" onclick="handleExportEmail('individual-pdf')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                Email Me
+              </button>
+              <button class="btn-export-action" onclick="handleExportSaveToDrive('individual-pdf')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2 2 19h7l5-9 5 9h3L12 2z"/></svg>
+                Save to Drive
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel 3: Results Summary PDF -->
+          <div class="export-tab-panel" id="exportPanel-summary-pdf" style="display:none;">
+            <h3 class="export-panel-title">Results Summary PDF</h3>
+            <p class="export-panel-desc">
+              ส่งออกไฟล์ PDF สรุปผลคะแนนรวมของห้องสอบทั้งหมด (แสดงคะแนนเฉลี่ย, อัตราการสอบผ่าน และรายชื่อผู้เข้าสอบทุกคน)
+            </p>
+            <div class="export-option-row">
+              <span>Show Student Names</span>
+              <label class="soc-toggle-label">
+                <input type="checkbox" class="soc-toggle-input" id="exportSummaryShowNames" checked />
+                <span class="soc-switch"></span>
+              </label>
+            </div>
+            <div class="export-footer-btns">
+              <button class="btn-export-action" onclick="handleExportDownload('summary-pdf')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download
+              </button>
+              <button class="btn-export-action" onclick="handleExportEmail('summary-pdf')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                Email Me
+              </button>
+              <button class="btn-export-action" onclick="handleExportSaveToDrive('summary-pdf')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2 2 19h7l5-9 5 9h3L12 2z"/></svg>
+                Save to Drive
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel 4: Answer Key PDF -->
+          <div class="export-tab-panel" id="exportPanel-answer-key" style="display:none;">
+            <h3 class="export-panel-title">Answer Key PDF</h3>
+            <p class="export-panel-desc">
+              ส่งออกไฟล์ PDF ชุดข้อสอบพร้อมเฉลยที่ถูกต้องครบทุกข้อและรูปภาพประกอบ เหมาะสำหรับวิทยากรและฝ่ายตรวจสอบคุณภาพ
+            </p>
+            <div class="export-option-row">
+              <span>Include Question Images</span>
+              <label class="soc-toggle-label">
+                <input type="checkbox" class="soc-toggle-input" id="exportAnswerKeyIncludeImages" checked />
+                <span class="soc-switch"></span>
+              </label>
+            </div>
+            <div class="export-footer-btns">
+              <button class="btn-export-action" onclick="handleExportDownload('answer-key')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download
+              </button>
+              <button class="btn-export-action" onclick="handleExportEmail('answer-key')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                Email Me
+              </button>
+              <button class="btn-export-action" onclick="handleExportSaveToDrive('answer-key')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2 2 19h7l5-9 5 9h3L12 2z"/></svg>
+                Save to Drive
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 6: IMAGE LIGHTBOX ================= -->
+  <div class="modal-backdrop" id="imageLightboxModal" onclick="closeModal('imageLightboxModal')">
+    <div style="position:relative;max-width:92vw;max-height:90vh;display:flex;align-items:center;justify-content:center;" onclick="event.stopPropagation()">
+      <button onclick="closeModal('imageLightboxModal')" style="position:absolute;top:-14px;right:-14px;width:36px;height:36px;border-radius:50%;border:none;background:#1e293b;color:#fff;font-size:1.3rem;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);">&times;</button>
+      <img id="lightboxPreviewImg" alt="Question Image Preview" style="max-width:90vw;max-height:85vh;border-radius:12px;background:#fff;padding:6px;box-shadow:0 20px 50px rgba(0,0,0,0.35);object-fit:contain;" />
+    </div>
+  </div>
+
+  <!-- Hidden Offscreen PDF Render Stage -->
+  <div id="pdfRenderStage" style="position:fixed;left:-99999px;top:0;width:794px;background:#ffffff;z-index:-1;"></div>
+
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20261123"></script>
 </body>
 </html>
