@@ -1784,7 +1784,373 @@ body {
   color: #ffffff;
 }
 
+/* ================= BRIGHT CREATIVE STUDIO THEME (IMAGE 1) + HANA LOGO (IMAGE 2) ================= */
+body.studio-theme {
+  background-color: #f4f8fc;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86) 0%, rgba(240, 249, 255, 0.84) 55%, rgba(255, 255, 255, 0.89) 100%),
+    url('../assets/theme-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+body.studio-theme .top-navbar {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.75);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+}
+
+body.studio-theme .brand-group {
+  gap: 16px;
+}
+
+body.studio-theme .nav-tab {
+  padding: 0 11px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+body.studio-theme .navbar-right {
+  gap: 8px;
+}
+
+.hana-navbar-logo-img {
+  height: 36px;
+  width: auto;
+  max-width: 132px;
+  object-fit: contain;
+  display: block;
+  mix-blend-mode: multiply;
+}
+
+.hana-logo-divider {
+  width: 1px;
+  height: 28px;
+  background: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.trainer-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 11px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+  border: 1px solid #bfdbfe;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  white-space: nowrap;
+}
+
+.trainer-logout-btn {
+  background: #ffffff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.trainer-logout-btn:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+body.studio-theme .launch-wrapper {
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 34px 28px 40px;
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.08);
+  max-width: 760px;
+}
+
+body.studio-theme .quick-question-divider span {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  padding: 2px 16px;
+}
+
+body.studio-theme .quiz-list-card,
+body.studio-theme .live-results-card,
+body.studio-theme .live-empty-state,
+body.studio-theme .student-card,
+body.studio-theme .report-stat-card {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+/* ================= FRONT-PAGE TRAINER LOGIN SCREEN ================= */
+.trainer-login-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.trainer-login-screen.hidden {
+  display: none;
+}
+
+.trainer-login-backdrop {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.62) 0%, rgba(224, 242, 254, 0.68) 55%, rgba(255, 255, 255, 0.72) 100%),
+    url('../assets/theme-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  z-index: -1;
+}
+
+.trainer-login-card {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.16);
+  padding: 34px 30px 28px;
+  text-align: center;
+}
+
+.trainer-login-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.hana-login-logo-img {
+  max-height: 54px;
+  width: auto;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.trainer-login-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #1e3a8a 0%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.trainer-login-subtitle {
+  font-size: 0.86rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.trainer-login-divider {
+  position: relative;
+  text-align: center;
+  margin: 20px 0 14px;
+}
+
+.trainer-login-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.trainer-login-divider span {
+  position: relative;
+  background: #ffffff;
+  padding: 0 12px;
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ================= BUILDER PASS % & MC REMOVE CHOICE (×) ================= */
+.builder-meta-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 0.85fr;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+.room-badge-btn,
+.db-status-btn,
+.role-switch-btn {
+  white-space: nowrap;
+}
+
+/* ================= CUSTOM LAUNCH & QUICK QUESTION ICON IMAGES ================= */
+.launch-circle-img-wrap,
+.quick-circle-img-wrap {
+  overflow: hidden;
+  padding: 0;
+  background: #ffffff;
+}
+
+.launch-custom-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  clip-path: circle(39% at 50% 50%);
+  transform: scale(1.26);
+  display: block;
+  mix-blend-mode: multiply;
+  transition: transform 0.2s ease;
+}
+
+.launch-item:hover .launch-custom-icon-img {
+  transform: scale(1.33);
+}
+
+.quick-custom-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  mix-blend-mode: multiply;
+  transition: transform 0.2s ease;
+}
+
+.quick-custom-icon-img.icon-mc-adjust {
+  object-position: 60% 52%;
+  clip-path: circle(35% at 58% 52%);
+  transform: translate(-6%, -1%) scale(1.42);
+}
+
+.quick-custom-icon-img.icon-tf-adjust {
+  object-position: 54% 46%;
+  clip-path: circle(34% at 52% 46%);
+  transform: translate(-3%, 4%) scale(1.4);
+}
+
+.quick-custom-icon-img.icon-sa-adjust {
+  object-position: 48% 49%;
+  clip-path: circle(37% at 48% 49%);
+  transform: translate(1%, 1%) scale(1.26);
+}
+
+.launch-item:hover .quick-custom-icon-img.icon-mc-adjust {
+  transform: translate(-6%, -1%) scale(1.48);
+}
+
+.launch-item:hover .quick-custom-icon-img.icon-tf-adjust {
+  transform: translate(-3%, 4%) scale(1.46);
+}
+
+.launch-item:hover .quick-custom-icon-img.icon-sa-adjust {
+  transform: translate(1%, 1%) scale(1.32);
+}
+
+.dm-icon-img-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid #38bdf8;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.dm-custom-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  clip-path: circle(39% at 50% 50%);
+  transform: scale(1.28);
+  display: block;
+  mix-blend-mode: multiply;
+}
+
+@media (max-width: 1180px) {
+  body.studio-theme .top-navbar {
+    height: auto;
+    min-height: 60px;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+    gap: 8px;
+  }
+  body.studio-theme .nav-tabs {
+    height: 44px;
+  }
+  body.studio-theme .nav-tab {
+    height: 44px;
+  }
+}
+
+.mc-choice-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 4px 6px 4px 8px;
+}
+
+.mc-choice-remove-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.14s;
+}
+
+.mc-choice-remove-btn:hover:not(:disabled) {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.mc-choice-remove-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+}
+
 @media (max-width: 768px) {
+  .builder-meta-grid {
+    grid-template-columns: 1fr;
+  }
+  .hana-logo-divider {
+    display: none;
+  }
   .launch-top-selectors,
   .launch-settings-grid,
   .report-stat-cards,

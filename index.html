@@ -22,23 +22,85 @@
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <!-- LZ-String (Compress Exam Data into Student URL for 100% instant mobile loading) -->
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=20261123" />
+  <link rel="stylesheet" href="css/style.css?v=20261124b" />
 </head>
-<body>
+<body class="studio-theme">
+
+  <!-- ================= TRAINER LOGIN GATE (FRONT PAGE LOGIN) ================= -->
+  <div id="trainerLoginScreen" class="trainer-login-screen">
+    <div class="trainer-login-backdrop"></div>
+    <div class="trainer-login-card">
+      <div class="trainer-login-logo-wrap">
+        <img src="assets/hana-logo.jpg" alt="HANA" class="hana-login-logo-img" onerror="this.style.display='none';document.getElementById('loginLogoSvgFallback').style.display='inline-flex';" />
+        <div id="loginLogoSvgFallback" class="hana-svg-fallback" style="display:none;">
+          <svg width="150" height="44" viewBox="0 0 210 60" xmlns="http://www.w3.org/2000/svg">
+            <g fill="#1ea3dc">
+              <rect x="26" y="2" width="3.5" height="23"/><rect x="32" y="2" width="3.5" height="23"/>
+              <rect x="38" y="10" width="3.5" height="15"/><rect x="44" y="10" width="3.5" height="15"/>
+              <rect x="2" y="26" width="23" height="3.5"/><rect x="2" y="32" width="23" height="3.5"/>
+              <rect x="10" y="20" width="15" height="3.5"/><rect x="10" y="38" width="15" height="3.5"/>
+              <rect x="38" y="20" width="20" height="3.5"/><rect x="38" y="26" width="20" height="3.5"/>
+              <rect x="38" y="32" width="14" height="3.5"/><rect x="38" y="38" width="14" height="3.5"/>
+              <rect x="26" y="38" width="3.5" height="20"/><rect x="32" y="38" width="3.5" height="20"/>
+              <rect x="20" y="38" width="3.5" height="14"/><rect x="38" y="38" width="3.5" height="14"/>
+            </g>
+            <text x="68" y="45" font-family="Georgia, serif" font-size="36" font-weight="700" fill="#2d2d2d" letter-spacing="2">HANA</text>
+          </svg>
+        </div>
+      </div>
+
+      <h1 class="trainer-login-title">Hana Exam Online</h1>
+      <p class="trainer-login-subtitle">ระบบสร้างข้อสอบและประเมินผลออนไลน์แบบ Real-time</p>
+
+      <form id="trainerLoginForm" onsubmit="handleTrainerLoginSubmit(event)" style="text-align:left;margin-top:20px;">
+        <div class="form-group">
+          <label for="loginEmpIdInput">รหัสพนักงานผู้สอน (Trainer Employee ID)</label>
+          <input type="text" id="loginEmpIdInput" class="form-input" placeholder="เช่น 056894" autocomplete="username" required />
+        </div>
+
+        <div class="form-group">
+          <label for="loginPasswordInput">รหัสผ่าน (4 ตัวท้ายของรหัสพนักงาน)</label>
+          <div style="position:relative;">
+            <input type="password" id="loginPasswordInput" class="form-input" placeholder="กรอก 4 ตัวท้ายของรหัสพนักงาน เช่น 6894" autocomplete="current-password" required style="padding-right:44px;" />
+            <button type="button" onclick="toggleLoginPasswordVisibility()" title="แสดง/ซ่อนรหัสผ่าน" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:#64748b;">👁</button>
+          </div>
+          <small style="display:block;color:#64748b;margin-top:5px;font-size:0.78rem;">
+            💡 ใช้รหัสพนักงาน + รหัสผ่าน 4 ตัวท้าย (ระบบจะสร้างห้องสอบประจำตัวให้อัตโนมัติ)
+          </small>
+        </div>
+
+        <div id="trainerLoginError" style="display:none;background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:9px 12px;font-size:0.84rem;margin-bottom:14px;font-weight:600;"></div>
+
+        <button type="submit" id="trainerLoginSubmitBtn" class="btn-primary-blue" style="width:100%;justify-content:center;padding:12px;font-size:0.96rem;border-radius:10px;">
+          🔐 เข้าสู่ระบบผู้สอน (Trainer Login)
+        </button>
+      </form>
+
+      <div class="trainer-login-divider">
+        <span>หรือสำหรับพนักงานเข้าทำข้อสอบ</span>
+      </div>
+
+      <button type="button" class="btn-outline" style="width:100%;justify-content:center;padding:11px;border-radius:10px;border-color:#93c5fd;color:#0369a1;background:#f0f9ff;" onclick="enterStudentPortalFromLogin()">
+        📱 เข้าห้องสอบสำหรับพนักงาน (Student Portal)
+      </button>
+    </div>
+  </div>
 
   <!-- ================= TOP NAVBAR (Hana Exam Online Admin / Trainer Header) ================= -->
   <header class="top-navbar" id="teacherNavbar">
     <div class="brand-group">
-      <div class="brand-logo" onclick="switchTab('launch')">
-        <div class="hana-logo-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <div class="brand-logo" onclick="switchTab('launch')" title="Hana Exam Online — หน้าหลัก">
+        <img src="assets/hana-logo.jpg" alt="HANA" class="hana-navbar-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+        <div class="hana-logo-icon" style="display:none;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
             <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
           </svg>
         </div>
+        <div class="hana-logo-divider"></div>
         <div class="hana-logo-text-wrap">
-          <span class="hana-brand-main">Hana Exam Online</span>
-          <span class="hana-brand-sub">Smart Assessment System</span>
+          <span class="hana-brand-main">Exam Online</span>
+          <span class="hana-brand-sub">Smart Assessment</span>
         </div>
       </div>
 
@@ -56,7 +118,7 @@
 
     <div class="navbar-right">
       <div class="online-counter" title="จำนวนผู้เข้าสอบที่ส่งคำตอบในห้องปัจจุบัน">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
           <circle cx="9" cy="7" r="4"></circle>
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -66,44 +128,49 @@
       </div>
 
       <button class="room-badge-btn" onclick="switchTab('rooms')" title="คลิกเพื่อสร้างเพิ่มหรือสลับห้องสอบ (สร้างได้ไม่จำกัด)">
-        <span>🏠 ห้อง:</span>
+        <span>🏠</span>
         <span id="navRoomName">THANAT01</span>
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
 
-      <button class="db-status-btn" onclick="openModal('settingsModal')" id="dbStatusBtn">
+      <button class="db-status-btn" onclick="openModal('settingsModal')" id="dbStatusBtn" title="ตั้งค่า Google Sheets, Drive & AI">
         <span id="dbStatusDot" style="width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>
-        <span id="dbStatusText">ตั้งค่า Google Sheet / AI</span>
+        <span id="dbStatusText">Google Sheets</span>
       </button>
 
-      <button class="role-switch-btn" onclick="toggleStudentPortalMode()">
-        📱 มุมมองผู้เข้าสอบ (มือถือ)
+      <button class="role-switch-btn" onclick="toggleStudentPortalMode()" title="สลับดูมุมมองผู้เข้าสอบบนมือถือ">
+        📱 ผู้เข้าสอบ
       </button>
 
-      <div class="avatar-circle" title="Hana Exam Online Admin">HN</div>
+      <div class="trainer-user-pill" id="trainerUserPill" title="ผู้สอนที่เข้าสู่ระบบ">
+        <span id="navTrainerEmpId">ADMIN</span>
+        <button type="button" class="trainer-logout-btn" onclick="logoutTrainer()" title="ออกจากระบบผู้สอน">ออก</button>
+      </div>
     </div>
   </header>
 
   <!-- ================= STUDENT / EXAMINEE MODE BAR ================= -->
-  <header class="top-navbar" id="studentNavbar" style="display:none; background:#eff6ff; border-bottom-color:#bfdbfe;">
+  <header class="top-navbar" id="studentNavbar" style="display:none; background:rgba(255,255,255,0.95); border-bottom-color:#bfdbfe;">
     <div class="brand-logo" onclick="toggleStudentPortalMode()">
-      <div class="hana-logo-icon">
+      <img src="assets/hana-logo.jpg" alt="HANA" class="hana-navbar-logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+      <div class="hana-logo-icon" style="display:none;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
           <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
         </svg>
       </div>
+      <div class="hana-logo-divider"></div>
       <div class="hana-logo-text-wrap">
-        <span class="hana-brand-main">Hana Exam Online</span>
-        <span class="hana-brand-sub" style="color:#0284c7;">Student / Examinee Portal</span>
+        <span class="hana-brand-main">Exam Online</span>
+        <span class="hana-brand-sub" style="color:#0284c7;">Student Portal</span>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <span id="studentRoomBadge" class="soc-code-pill" style="background:#dbeafe;color:#1e40af;">ROOM: THANAT01</span>
       <button class="btn-outline" id="backToAdminBtn" onclick="toggleStudentPortalMode()" style="font-size:0.82rem;padding:6px 12px;">
-        ⬅ กลับหน้าผู้คุมสอบ (Admin View)
+        ⬅ หน้าผู้สอน (Trainer)
       </button>
     </div>
   </header>
@@ -122,41 +189,26 @@
         </div>
 
         <div class="launch-main-circles">
-          <!-- Exam / Quiz (Icon matches Instant Feedback in Launch Settings) -->
+          <!-- Exam / Quiz -->
           <button class="launch-item" onclick="openLaunchQuizModal('quiz')">
-            <div class="launch-circle">
-              <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
-                <path d="M7 9l2 2m0-2l-2 2"></path>
-                <line x1="12" y1="10" x2="17" y2="10"></line>
-                <path d="M6.8 15.2l1.2 1.2 2.2-2.4"></path>
-                <line x1="12" y1="15" x2="17" y2="15"></line>
-              </svg>
+            <div class="launch-circle launch-circle-img-wrap">
+              <img src="assets/icon-quiz.jpg" alt="Start Exam / Quiz" class="launch-custom-icon-img" />
             </div>
             <span class="launch-label">Start Exam / Quiz<br><small style="font-size:0.8rem;color:#64748b;">เปิดสอบออนไลน์</small></span>
           </button>
 
-          <!-- Team Challenge (Rocket icon matches Team Challenge in Launch Settings) -->
+          <!-- Team Challenge -->
           <button class="launch-item" onclick="openLaunchQuizModal('team')">
-            <div class="launch-circle">
-              <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
-                <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
-                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
-                <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
-              </svg>
+            <div class="launch-circle launch-circle-img-wrap">
+              <img src="assets/icon-team.jpg" alt="Team Challenge" class="launch-custom-icon-img" />
             </div>
             <span class="launch-label">Team<br>Challenge</span>
           </button>
 
           <!-- Exit Ticket / Post-Training Survey -->
           <button class="launch-item" onclick="launchExitTicket()">
-            <div class="launch-circle">
-              <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <path d="m9 15 2 2 4-4"></path>
-              </svg>
+            <div class="launch-circle launch-circle-img-wrap">
+              <img src="assets/icon-exit.jpg" alt="Exit Ticket" class="launch-custom-icon-img" />
             </div>
             <span class="launch-label">Exit Ticket<br><small style="font-size:0.8rem;color:#64748b;">ประเมินผลท้ายการอบรม</small></span>
           </button>
@@ -168,17 +220,23 @@
 
         <div class="quick-circles">
           <button class="launch-item" onclick="launchQuickQuestion('MC')">
-            <div class="quick-circle mc">MC</div>
+            <div class="quick-circle mc quick-circle-img-wrap">
+              <img src="assets/icon-mc.jpg" alt="Multiple Choice" class="quick-custom-icon-img icon-mc-adjust" />
+            </div>
             <span class="launch-label" style="font-size:0.9rem;">Multiple Choice</span>
           </button>
 
           <button class="launch-item" onclick="launchQuickQuestion('TF')">
-            <div class="quick-circle tf">TF</div>
+            <div class="quick-circle tf quick-circle-img-wrap">
+              <img src="assets/icon-tf.jpg" alt="True / False" class="quick-custom-icon-img icon-tf-adjust" />
+            </div>
             <span class="launch-label" style="font-size:0.9rem;">True / False</span>
           </button>
 
           <button class="launch-item" onclick="launchQuickQuestion('SA')">
-            <div class="quick-circle sa">SA</div>
+            <div class="quick-circle sa quick-circle-img-wrap">
+              <img src="assets/icon-sa.jpg" alt="Short Answer" class="quick-custom-icon-img icon-sa-adjust" />
+            </div>
             <span class="launch-label" style="font-size:0.9rem;">Short Answer</span>
           </button>
         </div>
@@ -590,13 +648,8 @@
         <!-- Step 1: Student Login -->
         <div class="student-card" id="studentLoginStep">
           <div class="student-card-header">
-            <div class="hana-logo-icon" style="margin:0 auto 12px;width:48px;height:48px;border-radius:12px;">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-              </svg>
-            </div>
-            <h2 style="font-size:1.4rem;color:#1e3a8a;">Hana Exam Online</h2>
+            <img src="assets/hana-logo.jpg" alt="HANA" class="hana-login-logo-img" style="max-height:46px;margin:0 auto 10px;display:block;" onerror="this.style.display='none';" />
+            <h2 style="font-size:1.35rem;color:#1e3a8a;">Hana Exam Online</h2>
             <p style="font-size:0.88rem;color:#6b7280;margin-top:4px;">เลือกหรือกรอกรหัสห้องสอบ และระบุรหัสพนักงาน-ชื่อเพื่อเริ่มทำข้อสอบ</p>
             <div id="stuDetectedQuizBanner" style="margin-top:10px;padding:8px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:0.84rem;color:#1e40af;font-weight:600;">
               ชุดข้อสอบที่เปิดสอบ: แบบวัดผลการปฐมนิเทศ พนักงานรายวัน 25 ข้อ
@@ -666,14 +719,15 @@
 
         <!-- Step 3: Completed -->
         <div class="student-card" id="studentDoneStep" style="display:none;text-align:center;">
-          <div style="font-size:3rem;margin-bottom:10px;">🎉</div>
+          <div style="font-size:3rem;margin-bottom:10px;" id="stuDoneEmoji">🎉</div>
           <h2 style="font-size:1.35rem;margin-bottom:6px;">ส่งคำตอบเรียบร้อยแล้ว!</h2>
-          <p id="stuFinalScoreText" style="font-size:1.05rem;font-weight:700;color:#16a34a;margin-bottom:16px;"></p>
+          <p id="stuFinalScoreText" style="font-size:1.08rem;font-weight:700;color:#16a34a;margin-bottom:8px;"></p>
+          <div id="stuPassStatusBadge" style="margin-bottom:14px;"></div>
           <p style="font-size:0.85rem;color:#64748b;margin-bottom:20px;">
             คะแนนและคำตอบของคุณถูกส่งไปยังหน้าจอ Live Results และบันทึกลงฐานข้อมูล Google Sheets เรียบร้อยแล้ว
           </p>
           <button class="btn-outline" id="stuResetBtn" style="width:100%;justify-content:center;" onclick="studentResetToLogin()">
-            สลับผู้เข้าสอบ / ทำอีกครั้ง
+            สลับผู้เข้าสอบ / ทำข้อสอบอีกครั้ง
           </button>
         </div>
       </div>
@@ -698,8 +752,8 @@
           <button class="btn-outline mode-pill" id="tabMode-blank" onclick="openCreateQuizFeature('blank')">✏️ สร้างเอง / แก้ไขข้อสอบ</button>
         </div>
 
-        <!-- Common Quiz Title -->
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px;">
+        <!-- Common Quiz Title + Subject + Passing Score % -->
+        <div class="builder-meta-grid">
           <div class="form-group" style="margin-bottom:0;">
             <label>ชื่อชุดข้อสอบ (Exam / Quiz Title)</label>
             <input type="text" id="builderQuizTitle" class="form-input" placeholder="เช่น แบบวัดผลการปฐมนิเทศ พนักงานรายวัน 25 ข้อ" />
@@ -707,6 +761,13 @@
           <div class="form-group" style="margin-bottom:0;">
             <label>หมวดวิชา / แผนก (Subject / Dept)</label>
             <input type="text" id="builderQuizSubject" class="form-input" placeholder="เช่น HRD / QA / Production" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="color:#0369a1;">🎯 เกณฑ์สอบผ่าน (%)</label>
+            <div style="position:relative;">
+              <input type="number" id="builderQuizPassPercent" class="form-input" min="0" max="100" value="80" placeholder="80" style="font-weight:700;color:#1e40af;padding-right:34px;" />
+              <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-weight:700;color:#0284c7;">%</span>
+            </div>
           </div>
         </div>
 
@@ -861,14 +922,8 @@
               <!-- 1. Instant Feedback (icon matches Start Exam/Quiz on Launch page) -->
               <label class="delivery-method-card selected" data-method="instant_feedback" onclick="selectDeliveryMethod('instant_feedback')">
                 <input type="radio" name="launchDeliveryMethod" value="instant_feedback" checked style="display:none;" />
-                <div class="dm-icon-box">
-                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="16" rx="2.5"></rect>
-                    <path d="M7 9l2 2m0-2l-2 2"></path>
-                    <line x1="12" y1="10" x2="17" y2="10"></line>
-                    <path d="M6.8 15.2l1.2 1.2 2.2-2.4"></path>
-                    <line x1="12" y1="15" x2="17" y2="15"></line>
-                  </svg>
+                <div class="dm-icon-box dm-icon-img-box">
+                  <img src="assets/icon-quiz.jpg" alt="Instant Feedback" class="dm-custom-icon-img" />
                 </div>
                 <div class="dm-text-wrap">
                   <div class="dm-title">Instant Feedback</div>
@@ -915,13 +970,8 @@
               <!-- 4. Team Challenge (Rocket icon matches Team Challenge on Launch page) -->
               <label class="delivery-method-card" data-method="team_challenge" onclick="selectDeliveryMethod('team_challenge')">
                 <input type="radio" name="launchDeliveryMethod" value="team_challenge" style="display:none;" />
-                <div class="dm-icon-box">
-                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
-                    <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
-                    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
-                    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
-                  </svg>
+                <div class="dm-icon-box dm-icon-img-box">
+                  <img src="assets/icon-team.jpg" alt="Team Challenge" class="dm-custom-icon-img" />
                 </div>
                 <div class="dm-text-wrap">
                   <div class="dm-title">Team Challenge</div>
@@ -1315,6 +1365,6 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="js/app.js?v=20261123"></script>
+  <script src="js/app.js?v=20261124"></script>
 </body>
 </html>

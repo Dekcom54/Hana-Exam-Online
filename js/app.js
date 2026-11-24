@@ -238,9 +238,169 @@ let currentStudent = {
   monitoringActive: false
 };
 
+const TRAINER_AUTH_KEY = 'HANA_EXAM_TRAINER_SESSION_V1';
+let currentTrainer = null;
+
+function loadTrainerSession() {
+  try {
+    const raw = sessionStorage.getItem(TRAINER_AUTH_KEY) || localStorage.getItem(TRAINER_AUTH_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.employeeId) return parsed;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function saveTrainerSession(trainerObj) {
+  currentTrainer = trainerObj;
+  if (trainerObj) {
+    sessionStorage.setItem(TRAINER_AUTH_KEY, JSON.stringify(trainerObj));
+    localStorage.setItem(TRAINER_AUTH_KEY, JSON.stringify(trainerObj));
+  } else {
+    sessionStorage.removeItem(TRAINER_AUTH_KEY);
+    localStorage.removeItem(TRAINER_AUTH_KEY);
+  }
+  updateTrainerNavbarBadge();
+}
+
+function updateTrainerNavbarBadge() {
+  const empEl = document.getElementById('navTrainerEmpId');
+  const pillEl = document.getElementById('trainerUserPill');
+  if (!empEl) return;
+  if (currentTrainer && currentTrainer.employeeId) {
+    empEl.textContent = '👤 ' + currentTrainer.employeeId;
+    if (pillEl) pillEl.title = `ผู้สอน: ${currentTrainer.name || currentTrainer.employeeId} (รหัสพนักงาน: ${currentTrainer.employeeId})`;
+  } else {
+    empEl.textContent = 'GUEST';
+  }
+}
+
+function showTrainerLoginGate(show) {
+  const screen = document.getElementById('trainerLoginScreen');
+  if (!screen) return;
+  screen.classList.toggle('hidden', !show);
+  if (show) {
+    const errEl = document.getElementById('trainerLoginError');
+    if (errEl) errEl.style.display = 'none';
+    setTimeout(() => document.getElementById('loginEmpIdInput')?.focus(), 80);
+  }
+}
+
+function toggleLoginPasswordVisibility() {
+  const inp = document.getElementById('loginPasswordInput');
+  if (!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function enterStudentPortalFromLogin() {
+  showTrainerLoginGate(false);
+  toggleStudentPortalMode(true);
+}
+
+async function handleTrainerLoginSubmit(event) {
+  event.preventDefault();
+  const empInput = document.getElementById('loginEmpIdInput');
+  const pwdInput = document.getElementById('loginPasswordInput');
+  const errEl = document.getElementById('trainerLoginError');
+  const btn = document.getElementById('trainerLoginSubmitBtn');
+
+  const empId = (empInput?.value || '').trim().toUpperCase();
+  const pwd = (pwdInput?.value || '').trim();
+
+  const showErr = (msg) => {
+    if (errEl) {
+      errEl.textContent = '⚠️ ' + msg;
+      errEl.style.display = 'block';
+    }
+  };
+
+  if (empId.length < 4) {
+    return showErr('กรุณากรอกรหัสพนักงานอย่างน้อย 4 ตัวอักษร/ตัวเลข');
+  }
+  if (!pwd) {
+    return showErr('กรุณากรอกรหัสผ่าน (4 ตัวท้ายของรหัสพนักงาน)');
+  }
+
+  if (errEl) errEl.style.display = 'none';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ กำลังตรวจสอบสิทธิ์ผู้สอน...';
+  }
+
+  const expectedLast4 = empId.slice(-4);
+  let trainerObj = null;
+
+  // ตรวจสอบกับ Google Sheets (ชีต Trainers) ก่อนหากเชื่อมต่อได้
+  if (appSettings.gasWebAppUrl) {
+    const res = await callGoogleScript({
+      action: 'trainerLogin',
+      employee_id: empId,
+      password: pwd
+    });
+    if (res && res.status === 'ok' && res.trainer) {
+      trainerObj = res.trainer;
+    } else if (res && res.status === 'error' && !String(res.message || '').includes('Unknown action')) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔐 เข้าสู่ระบบผู้สอน (Trainer Login)';
+      }
+      return showErr(res.message || 'รหัสพนักงานหรือรหัสผ่านไม่ถูกต้อง');
+    }
+  }
+
+  // Fallback ในเครื่องกรณีออฟไลน์หรือยังไม่ได้ redeploy Code.gs ใหม่
+  if (!trainerObj) {
+    if (pwd !== expectedLast4) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔐 เข้าสู่ระบบผู้สอน (Trainer Login)';
+      }
+      return showErr('รหัสผ่านไม่ถูกต้อง กรุณากรอก 4 ตัวท้ายของรหัสพนักงาน (' + expectedLast4.replace(/./g, '•') + ')');
+    }
+    trainerObj = {
+      employeeId: empId,
+      name: 'Trainer ' + empId,
+      department: 'Training / HRD',
+      defaultRoom: 'HANA-' + expectedLast4,
+      role: 'trainer'
+    };
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = '🔐 เข้าสู่ระบบผู้สอน (Trainer Login)';
+  }
+
+  saveTrainerSession(trainerObj);
+
+  // สร้าง/ตรวจสอบห้องสอบประจำตัวของผู้สอนอัตโนมัติ (ไม่ชนกับผู้สอนท่านอื่น)
+  const autoRoom = String(trainerObj.defaultRoom || ('HANA-' + expectedLast4)).toUpperCase();
+  ensureRoomExistsInList(autoRoom, `ห้องสอบประจำตัว (${empId})`, trainerObj.department || 'Training / HRD');
+  appSettings.roomCode = autoRoom;
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+  updateRoomBadges();
+  renderRoomsManagement();
+
+  showTrainerLoginGate(false);
+  pullAllDataFromGoogleSheets(false);
+  showToast(`👋 ยินดีต้อนรับผู้สอน ${empId} (ห้องสอบประจำตัว: ${autoRoom})`);
+}
+
+function logoutTrainer() {
+  if (!confirm('ต้องการออกจากระบบผู้สอนใช่หรือไม่?')) return;
+  saveTrainerSession(null);
+  const pwdEl = document.getElementById('loginPasswordInput');
+  if (pwdEl) pwdEl.value = '';
+  showTrainerLoginGate(true);
+  showToast('ออกจากระบบเรียบร้อยแล้ว');
+}
+
 // ================= INITIALIZATION =================
 window.addEventListener('DOMContentLoaded', async () => {
   loadSettings();
+  currentTrainer = loadTrainerSession();
+  updateTrainerNavbarBadge();
 
   // 1. ตรวจสอบว่ามีข้อมูลข้อสอบแนบมากับ URL หรือไม่ (?mode=student&room=...&exam=...)
   const params = new URLSearchParams(window.location.search);
@@ -278,12 +438,17 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (params.get('mode') === 'student') {
+    showTrainerLoginGate(false);
     toggleStudentPortalMode(true);
     // ดึงข้อสอบล่าสุดของห้องนั้นจาก Google Sheets ทันทีที่เปิดหน้ามือถือ
     await syncStudentRoomSessionFromCloud(appSettings.roomCode);
-  } else {
-    // ถ้าเปิดหน้าผู้คุมสอบ ให้ซิงค์ชุดข้อสอบและห้องสอบกับ Google Sheets อัตโนมัติ
+  } else if (currentTrainer && currentTrainer.employeeId) {
+    showTrainerLoginGate(false);
+    // ถ้าเปิดหน้าผู้คุมสอบและล็อกอินแล้ว ให้ซิงค์ชุดข้อสอบและห้องสอบกับ Google Sheets อัตโนมัติ
     pullAllDataFromGoogleSheets(false);
+  } else {
+    // แสดงหน้า Login สำหรับผู้สอนก่อนเข้าใช้งาน
+    showTrainerLoginGate(true);
   }
 
   // รับข้อมูล Real-time ข้ามแท็บ
@@ -343,6 +508,7 @@ function buildEmbeddedStudentUrl(roomCode) {
           t: quiz.title,
           sb: quiz.subject || 'HRD',
           sc: quiz.shareCode || 'HANA-269251',
+          pp: quiz.passPercent !== undefined ? Number(quiz.passPercent) : 80,
           qs: (quiz.questions || []).map(item => [
             item.type || 'TF',
             item.text || '',
@@ -376,6 +542,7 @@ function importExamFromUrlParam(encodedStr) {
       title: data.q.t || 'ชุดข้อสอบออนไลน์',
       subject: data.q.sb || 'ทั่วไป',
       shareCode: data.q.sc || 'HANA-EXAM',
+      passPercent: data.q.pp !== undefined ? Number(data.q.pp) : 80,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       questions: (data.q.qs || []).map((arr, idx) => ({
@@ -482,6 +649,9 @@ function loadAppState() {
     if (!Array.isArray(parsed.clearedSessionIds)) {
       parsed.clearedSessionIds = [];
     }
+    if (!parsed.studentAttemptHistory || typeof parsed.studentAttemptHistory !== 'object') {
+      parsed.studentAttemptHistory = {};
+    }
 
     const hasOrient25 = parsed.quizzes.some(q => q.id === 'QUIZ_HANA_ORIENT_25' || q.title.includes('แบบวัดผลการปฐมนิเทศ'));
     if (!hasOrient25) {
@@ -561,10 +731,10 @@ function updateDbStatusIndicator() {
   const txt = document.getElementById('dbStatusText');
   if (appSettings.gasWebAppUrl) {
     dot.style.background = '#22c55e';
-    txt.textContent = 'Google Sheets: เชื่อมต่อแล้ว';
+    txt.textContent = 'Google Sheets';
   } else {
     dot.style.background = '#f59e0b';
-    txt.textContent = 'ตั้งค่า Google Sheet / AI';
+    txt.textContent = 'ตั้งค่า Sheet/AI';
   }
 }
 
@@ -591,6 +761,12 @@ function switchTab(tabName) {
 function toggleStudentPortalMode(forceStudent) {
   const isCurrentlyStudent = document.getElementById('view-student').classList.contains('active');
   const goStudent = forceStudent !== undefined ? forceStudent : !isCurrentlyStudent;
+
+  // หากผู้เข้าสอบกด "กลับหน้าผู้สอน" แต่ยังไม่ได้ล็อกอินเป็นผู้สอน ให้แสดงหน้า Trainer Login
+  if (!goStudent && (!currentTrainer || !currentTrainer.employeeId)) {
+    showTrainerLoginGate(true);
+    return;
+  }
 
   document.getElementById('teacherNavbar').style.display = goStudent ? 'none' : 'flex';
   document.getElementById('studentNavbar').style.display = goStudent ? 'flex' : 'none';
@@ -890,6 +1066,8 @@ function renderQuizLibrary() {
             <div class="quiz-meta">
               <span>${qCount} ข้อ</span>
               <span>•</span>
+              <span class="soc-code-pill" style="background:#e0f2fe;color:#0369a1;">🎯 เกณฑ์ผ่าน ${q.passPercent !== undefined ? q.passPercent : 80}%</span>
+              <span>•</span>
               <span>หมวด/แผนก: ${escapeHtml(q.subject || 'ทั่วไป')}</span>
               <span>•</span>
               <span class="soc-code-pill">${escapeHtml(q.shareCode || 'HANA-100000')}</span>
@@ -926,6 +1104,8 @@ function openCreateQuizFeature(mode, existingQuiz = null) {
     builderEditingQuizId = null;
     document.getElementById('builderQuizTitle').value = '';
     document.getElementById('builderQuizSubject').value = 'HRD / ทั่วไป';
+    const passEl = document.getElementById('builderQuizPassPercent');
+    if (passEl) passEl.value = 80;
     builderQuestions = [];
     if (mode === 'blank') {
       addBlankQuestionToBuilder('MC', false);
@@ -967,6 +1147,8 @@ function editExistingQuiz(quizId) {
   builderEditingQuizId = quiz.id;
   document.getElementById('builderQuizTitle').value = quiz.title;
   document.getElementById('builderQuizSubject').value = quiz.subject || 'ทั่วไป';
+  const passEl = document.getElementById('builderQuizPassPercent');
+  if (passEl) passEl.value = quiz.passPercent !== undefined ? quiz.passPercent : 80;
   builderQuestions = JSON.parse(JSON.stringify(quiz.questions || []));
   openCreateQuizFeature('blank', quiz);
 }
@@ -1108,23 +1290,36 @@ function renderBuilderQuestions() {
     let optionsHtml = '';
     if (q.type === 'MC') {
       const letters = ['A', 'B', 'C', 'D', 'E'];
+      const mcOptions = Array.isArray(q.options) && q.options.length >= 2 ? q.options : ['A. ตัวเลือก 1', 'B. ตัวเลือก 2'];
+      const canRemove = mcOptions.length > 2;
       optionsHtml = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
-          ${(q.options || ['', '', '', '']).map((opt, oIdx) => {
+          ${mcOptions.map((opt, oIdx) => {
             const letter = letters[oIdx] || String.fromCharCode(65 + oIdx);
             const isChecked = String(q.correctAnswer).toUpperCase() === letter;
             return `
-              <div style="display:flex;align-items:center;gap:6px;">
+              <div class="mc-choice-row">
                 <input type="radio" name="correct_${idx}" ${isChecked ? 'checked' : ''}
                   onchange="updateBuilderQuestion(${idx}, 'correctAnswer', '${letter}')" title="ตั้งเป็นข้อที่ถูกต้อง" />
                 <span style="font-weight:700;font-size:0.84rem;width:18px;">${letter}.</span>
-                <input type="text" class="form-input" style="padding:7px 10px;font-size:0.86rem;"
-                  value="${escapeHtml(opt.replace(/^[A-Eก-ง][\.\)\s]+/i, ''))}"
+                <input type="text" class="form-input" style="padding:6px 8px;font-size:0.86rem;border:none;background:transparent;"
+                  value="${escapeHtml(String(opt || '').replace(/^[A-Eก-ง][\.\)\s]+/i, ''))}"
                   oninput="updateBuilderOption(${idx}, ${oIdx}, this.value)" />
+                <button type="button" class="mc-choice-remove-btn"
+                  ${canRemove ? '' : 'disabled'}
+                  onclick="removeBuilderOption(${idx}, ${oIdx})"
+                  title="${canRemove ? 'ตัดตัวเลือกนี้ออก (เหลืออย่างน้อย 2 ตัวเลือก)' : 'ต้องมีอย่างน้อย 2 ตัวเลือก'}">✕</button>
               </div>
             `;
           }).join('')}
         </div>
+        ${mcOptions.length < 5 ? `
+          <div style="margin-top:8px;">
+            <button type="button" class="btn-outline" style="padding:4px 10px;font-size:0.76rem;color:#0284c7;border-color:#bae6fd;" onclick="addBuilderOption(${idx})">
+              + เพิ่มตัวเลือก (${letters[mcOptions.length] || ''})
+            </button>
+          </div>
+        ` : ''}
       `;
     } else if (q.type === 'TF') {
       optionsHtml = `
@@ -1321,6 +1516,38 @@ function updateBuilderOption(qIdx, optIdx, val) {
   builderQuestions[qIdx].options[optIdx] = `${letter}. ${val}`;
 }
 
+function removeBuilderOption(qIdx, optIdx) {
+  const q = builderQuestions[qIdx];
+  if (!q || !Array.isArray(q.options) || q.options.length <= 2) {
+    return showToast('ข้อสอบปรนัยต้องมีอย่างน้อย 2 ตัวเลือก');
+  }
+  const letters = ['A', 'B', 'C', 'D', 'E'];
+  const curCorrectIdx = letters.indexOf(String(q.correctAnswer || 'A').toUpperCase().charAt(0));
+
+  q.options.splice(optIdx, 1);
+  // จัดตัวอักษร A, B, C... ใหม่ให้ต่อเนื่องหลังตัดตัวเลือกออก
+  q.options = q.options.map((opt, i) => {
+    const cleanText = String(opt || '').replace(/^[A-Eก-ง][\.\)\s]+/i, '');
+    return `${letters[i]}. ${cleanText}`;
+  });
+
+  if (curCorrectIdx === optIdx) {
+    q.correctAnswer = 'A';
+  } else if (curCorrectIdx > optIdx) {
+    q.correctAnswer = letters[curCorrectIdx - 1] || 'A';
+  }
+  renderBuilderQuestions();
+}
+
+function addBuilderOption(qIdx) {
+  const q = builderQuestions[qIdx];
+  if (!q || !Array.isArray(q.options) || q.options.length >= 5) return;
+  const letters = ['A', 'B', 'C', 'D', 'E'];
+  const nextLetter = letters[q.options.length];
+  q.options.push(`${nextLetter}. ตัวเลือกที่ ${q.options.length + 1}`);
+  renderBuilderQuestions();
+}
+
 function changeBuilderQuestionType(idx, newType) {
   const q = builderQuestions[idx];
   if (!q) return;
@@ -1346,6 +1573,10 @@ function removeBuilderQuestion(idx) {
 async function saveBuilderQuiz() {
   const title = document.getElementById('builderQuizTitle').value.trim() || 'ชุดข้อสอบใหม่ (' + new Date().toLocaleDateString('th-TH') + ')';
   const subject = document.getElementById('builderQuizSubject').value.trim() || 'ทั่วไป';
+  const rawPass = document.getElementById('builderQuizPassPercent')?.value;
+  const passPercent = (rawPass !== '' && rawPass !== undefined && !isNaN(Number(rawPass)))
+    ? Math.min(100, Math.max(0, Number(rawPass)))
+    : 80;
 
   if (builderQuestions.length === 0) {
     return showToast('กรุณาเพิ่มคำถามอย่างน้อย 1 ข้อก่อนบันทึก');
@@ -1366,6 +1597,7 @@ async function saveBuilderQuiz() {
     if (idx !== -1) {
       appState.quizzes[idx].title = title;
       appState.quizzes[idx].subject = subject;
+      appState.quizzes[idx].passPercent = passPercent;
       appState.quizzes[idx].questions = cleanQuestions;
       appState.quizzes[idx].updatedAt = now;
       savedQuiz = appState.quizzes[idx];
@@ -1377,6 +1609,8 @@ async function saveBuilderQuiz() {
       id: 'QUIZ_' + Date.now(),
       title: title,
       subject: subject,
+      passPercent: passPercent,
+      createdBy: currentTrainer?.employeeId || '',
       shareCode: 'HANA-' + Math.floor(100000 + Math.random() * 900000),
       createdAt: now,
       updatedAt: now,
@@ -2316,7 +2550,7 @@ function finishCurrentActivity() {
     settings: JSON.parse(JSON.stringify(session.settings || {})),
     startedAt: session.startedAt || now,
     finishedAt: now,
-    passRateThreshold: 80,
+    passRateThreshold: quiz.passPercent !== undefined ? Number(quiz.passPercent) : 80,
     questions: JSON.parse(JSON.stringify(quiz.questions || [])),
     responses: JSON.parse(JSON.stringify(sessionResponses)),
     avgPercent: avgPct
@@ -2661,6 +2895,17 @@ async function studentEnterRoom() {
 
   document.getElementById('studentRoomBadge').textContent = 'ROOM: ' + room;
 
+  if (!appState.studentAttemptHistory || typeof appState.studentAttemptHistory !== 'object') {
+    appState.studentAttemptHistory = {};
+  }
+  const histKey = `${quiz.id}__${studentId}`;
+  const prevHist = appState.studentAttemptHistory[histKey];
+  const isRetake = Boolean(prevHist && prevHist.completedCount > 0);
+  const attemptCount = isRetake ? (prevHist.completedCount + 1) : 1;
+  const lockedFirstPct = isRetake ? prevHist.firstAttemptPercent : undefined;
+  const prevPassedPct = prevHist?.passedPercent !== undefined ? prevHist.passedPercent : '';
+  const quizPassCriteria = quiz.passPercent !== undefined ? Number(quiz.passPercent) : 80;
+
   if (!existing) {
     existing = {
       id: 'RESP_' + Date.now(),
@@ -2672,6 +2917,10 @@ async function studentEnterRoom() {
       answers: {},
       score: 0,
       percent: 0,
+      firstAttemptPercent: lockedFirstPct !== undefined ? lockedFirstPct : 0,
+      passedPercent: prevPassedPct,
+      passCriteria: quizPassCriteria,
+      attemptCount: attemptCount,
       tabSwitches: 0,
       monitoringLog: [],
       completed: false,
@@ -2681,6 +2930,26 @@ async function studentEnterRoom() {
     saveAppState();
   } else {
     existing.teamName = teamName || existing.teamName || '';
+    // หากพนักงานทำซ้ำใน session เดิม (และไม่ได้เปิด One Attempt) ให้นับเป็นรอบสอบใหม่และล็อกคะแนนสอบแรกไว้
+    if (existing.completed && !cfg.oneAttempt) {
+      if (!prevHist) {
+        appState.studentAttemptHistory[histKey] = {
+          completedCount: 1,
+          firstAttemptPercent: existing.percent || 0,
+          passedPercent: (existing.percent >= quizPassCriteria) ? existing.percent : ''
+        };
+      }
+      const h = appState.studentAttemptHistory[histKey];
+      existing.attemptCount = (h.completedCount || 1) + 1;
+      existing.firstAttemptPercent = h.firstAttemptPercent;
+      existing.passedPercent = h.passedPercent;
+      existing.answers = {};
+      existing.score = 0;
+      existing.percent = 0;
+      existing.completed = false;
+      currentStudent.answers = {};
+    }
+    existing.passCriteria = quizPassCriteria;
     saveAppState();
   }
   syncStudentResponseToGoogleSheet(existing, quiz);
@@ -2953,6 +3222,7 @@ function finishStudentExam() {
   const session = appState.activeSession;
   const quiz = appState.quizzes.find(q => q.id === session?.quizId) || appState.quizzes[0];
   const cfg = session?.settings || {};
+  const passCriteria = quiz?.passPercent !== undefined ? Number(quiz.passPercent) : 80;
 
   let resp = appState.responses.find(r =>
     session && String(r.sessionId) === String(session.id) && r.studentId === currentStudent.id
@@ -2960,6 +3230,33 @@ function finishStudentExam() {
   if (resp) {
     resp.completed = true;
     recalculateStudentScore(resp, quiz);
+    resp.passCriteria = passCriteria;
+
+    if (!appState.studentAttemptHistory || typeof appState.studentAttemptHistory !== 'object') {
+      appState.studentAttemptHistory = {};
+    }
+    const histKey = `${quiz?.id || 'Q'}__${currentStudent.id}`;
+    const prevHist = appState.studentAttemptHistory[histKey];
+    if (!prevHist) {
+      resp.attemptCount = 1;
+      resp.firstAttemptPercent = resp.percent;
+      resp.passedPercent = resp.percent >= passCriteria ? resp.percent : '';
+      appState.studentAttemptHistory[histKey] = {
+        completedCount: 1,
+        firstAttemptPercent: resp.percent,
+        passedPercent: resp.passedPercent
+      };
+    } else {
+      resp.attemptCount = (prevHist.completedCount || 1) + 1;
+      resp.firstAttemptPercent = prevHist.firstAttemptPercent;
+      resp.passedPercent = resp.percent >= passCriteria ? resp.percent : (prevHist.passedPercent || '');
+      appState.studentAttemptHistory[histKey] = {
+        completedCount: resp.attemptCount,
+        firstAttemptPercent: prevHist.firstAttemptPercent,
+        passedPercent: resp.passedPercent
+      };
+    }
+    resp.passStatus = (resp.percent >= passCriteria || resp.passedPercent !== '') ? 'ผ่าน (PASS)' : 'ไม่ผ่าน (FAIL)';
     resp.updatedAt = new Date().toISOString();
     saveAppState();
     if (quiz) syncStudentResponseToGoogleSheet(resp, quiz);
@@ -2969,12 +3266,22 @@ function finishStudentExam() {
   document.getElementById('studentDoneStep').style.display = 'block';
 
   const scoreEl = document.getElementById('stuFinalScoreText');
+  const passBadgeEl = document.getElementById('stuPassStatusBadge');
+  const emojiEl = document.getElementById('stuDoneEmoji');
   if (cfg.showFinalScore !== false && resp && quiz) {
+    const isPassed = Number(resp.percent || 0) >= passCriteria;
     scoreEl.textContent = `คะแนนของคุณ: ${resp.score} / ${(quiz.questions || []).length} ข้อ (${resp.percent}%)`;
-    scoreEl.style.color = '#16a34a';
+    scoreEl.style.color = isPassed ? '#16a34a' : '#dc2626';
+    if (emojiEl) emojiEl.textContent = isPassed ? '🎉' : '📝';
+    if (passBadgeEl) {
+      passBadgeEl.innerHTML = isPassed
+        ? `<span class="soc-code-pill" style="background:#dcfce7;color:#166534;padding:6px 14px;border-radius:999px;font-size:0.9rem;">✅ ผ่านเกณฑ์ (เกณฑ์ผ่าน ${passCriteria}%)</span>`
+        : `<span class="soc-code-pill" style="background:#fee2e2;color:#991b1b;padding:6px 14px;border-radius:999px;font-size:0.9rem;">❌ ยังไม่ผ่านเกณฑ์ (เกณฑ์ผ่าน ${passCriteria}%)</span>`;
+    }
   } else {
     scoreEl.textContent = 'บันทึกคำตอบเรียบร้อยแล้ว (ผู้คุมสอบปิดการแสดงคะแนนรวม)';
     scoreEl.style.color = '#0369a1';
+    if (passBadgeEl) passBadgeEl.innerHTML = '';
   }
 }
 
@@ -3119,6 +3426,7 @@ async function syncQuizToGoogleSheet(quiz) {
 
 async function syncStudentResponseToGoogleSheet(resp, quiz) {
   if (!appSettings.gasWebAppUrl) return;
+  const passPercent = quiz?.passPercent !== undefined ? Number(quiz.passPercent) : 80;
   const orderedLabels = (quiz.questions || []).map((q, idx) => {
     const a = resp.answers?.[idx];
     if (!a) return '-';
@@ -3128,6 +3436,10 @@ async function syncStudentResponseToGoogleSheet(resp, quiz) {
     action: 'submitAnswer',
     payload: Object.assign({}, resp, {
       quizTitle: quiz.title,
+      passPercent: passPercent,
+      firstAttemptPercent: resp.firstAttemptPercent !== undefined ? resp.firstAttemptPercent : resp.percent,
+      passedPercent: resp.passedPercent !== undefined ? resp.passedPercent : (resp.percent >= passPercent ? resp.percent : ''),
+      attemptCount: resp.attemptCount || 1,
       orderedAnswerLabels: orderedLabels
     })
   });
@@ -3521,14 +3833,17 @@ function buildCompleteResultsExcelWorkbook(report, includeMcContent = true) {
     ? Math.round(responses.reduce((s, r) => s + Number(r.percent || 0), 0) / responses.length)
     : 0;
 
-  // Sheet 1: Results (หัวข้อข้อสอบครบทุกตัวอักษรในหัวคอลัมน์)
+  const passCriteria = Number(report.passRateThreshold !== undefined ? report.passRateThreshold : 80);
+
+  // Sheet 1: Results (หัวข้อข้อสอบครบทุกตัวอักษรในหัวคอลัมน์ + ช่องคะแนนสอบแรก & คะแนนที่สอบผ่าน)
   const aoa = [];
   aoa.push([report.quizTitle || 'Hana Exam Online Report']);
   aoa.push([
     `Room: ${report.roomCode || '-'}`,
     `Date: ${formatSocrativeReportDate(report.finishedAt)}`,
     `Students: ${responses.length}`,
-    `Class Average: ${avgPct}%`
+    `Class Average: ${avgPct}%`,
+    `เกณฑ์สอบผ่าน: ${passCriteria}%`
   ]);
   aoa.push([]);
 
@@ -3539,7 +3854,10 @@ function buildCompleteResultsExcelWorkbook(report, includeMcContent = true) {
     'ห้องสอบ (Room)',
     'คะแนนที่ได้ (Score)',
     'คิดเป็น % (Score %)',
-    'จำนวนข้อที่ถูก (Correct)',
+    'เกณฑ์ผ่าน (%)',
+    'คะแนนสอบแรกคิดเป็น %',
+    'คะแนนที่สอบผ่านคิดเป็น %',
+    'ผลการประเมิน',
     ...questions.map((q, idx) => `${idx + 1}. ${String(q.text || '')}`)
   ];
   aoa.push(headerRow);
@@ -3551,20 +3869,33 @@ function buildCompleteResultsExcelWorkbook(report, includeMcContent = true) {
     '',
     `${totalQ}/${totalQ}`,
     '100%',
-    totalQ,
+    `${passCriteria}%`,
+    '100%',
+    '100%',
+    'ผ่าน (PASS)',
     ...questions.map(q => includeMcContent ? getOptionFullText(q, q.correctAnswer) : String(q.correctAnswer || ''))
   ];
   aoa.push(keyRow);
 
   // Student Rows
   responses.forEach((r, idx) => {
+    const pct = Number(r.percent || 0);
+    const firstPct = r.firstAttemptPercent !== undefined && r.firstAttemptPercent !== '' ? Number(r.firstAttemptPercent) : pct;
+    const isPassed = pct >= passCriteria || (r.passedPercent !== '' && r.passedPercent !== undefined && r.passedPercent !== 'ยังไม่ผ่าน');
+    const passedLabel = pct >= passCriteria
+      ? `${pct}%`
+      : (r.passedPercent !== '' && r.passedPercent !== undefined && r.passedPercent !== 'ยังไม่ผ่าน' ? `${r.passedPercent}%` : 'ยังไม่ผ่าน');
+
     const stuRow = [
       idx + 1,
       r.studentName || '-',
       r.roomCode || report.roomCode || '-',
       `${r.score || 0}/${totalQ}`,
-      `${r.percent || 0}%`,
-      Number(r.score || 0),
+      `${pct}%`,
+      `${passCriteria}%`,
+      `${firstPct}%`,
+      passedLabel,
+      isPassed ? 'ผ่าน (PASS)' : 'ไม่ผ่าน (FAIL)',
       ...questions.map((q, qIdx) => {
         const ans = r.answers?.[qIdx];
         if (!ans || ans.value === undefined || ans.value === '') return '-';
@@ -3576,13 +3907,17 @@ function buildCompleteResultsExcelWorkbook(report, includeMcContent = true) {
   });
 
   // Class Total Row
+  const passedTotalCount = responses.filter(r => Number(r.percent || 0) >= passCriteria).length;
   const totalRow = [
     '',
     'Class Total',
     `${responses.length} students`,
     responses.length > 0 ? `${(responses.reduce((s, r) => s + Number(r.score || 0), 0) / responses.length).toFixed(1)}/${totalQ}` : `0/${totalQ}`,
     `${avgPct}%`,
+    `${passCriteria}%`,
     '',
+    responses.length > 0 ? `ผ่าน ${passedTotalCount}/${responses.length} คน` : '-',
+    responses.length > 0 ? `${Math.round((passedTotalCount / responses.length) * 100)}%` : '0%',
     ...questions.map((q, qIdx) => {
       if (responses.length === 0) return '0%';
       const cCount = responses.filter(r => r.answers?.[qIdx]?.isCorrect).length;
@@ -3598,6 +3933,9 @@ function buildCompleteResultsExcelWorkbook(report, includeMcContent = true) {
     { wch: 15 },
     { wch: 15 },
     { wch: 14 },
+    { wch: 14 },
+    { wch: 22 },
+    { wch: 24 },
     { wch: 16 },
     ...questions.map(q => ({ wch: Math.min(60, Math.max(24, String(q.text || '').length * 0.7)) }))
   ];
@@ -3696,17 +4034,24 @@ async function resolveAllQuestionImagesForPdf(questions, includeImages = true) {
 function buildSocrativeStylePdfHeaderHtml(titleText, rightTopLines, scoreDisplayText) {
   return `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;">
-      <!-- Top Left Brand Logo (Hana Exam Online) -->
+      <!-- Top Left Official HANA Logo (Crisp Vector SVG for CORS-safe PDF) -->
       <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#1e3a8a 0%,#0284c7 60%,#06b6d4 100%);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-          </svg>
-        </div>
-        <div>
-          <div style="font-size:23px;font-weight:800;color:#1e3a8a;line-height:1.05;letter-spacing:-0.4px;">Hana Exam Online</div>
-          <div style="font-size:10px;font-weight:700;color:#64748b;letter-spacing:1.1px;margin-top:2px;">SMART ASSESSMENT SYSTEM</div>
+        <svg width="152" height="46" viewBox="0 0 215 62" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#1ea3dc">
+            <rect x="26" y="2" width="3.6" height="23"/><rect x="32" y="2" width="3.6" height="23"/>
+            <rect x="38" y="10" width="3.6" height="15"/><rect x="44" y="10" width="3.6" height="15"/>
+            <rect x="2" y="26" width="23" height="3.6"/><rect x="2" y="32" width="23" height="3.6"/>
+            <rect x="10" y="20" width="15" height="3.6"/><rect x="10" y="38" width="15" height="3.6"/>
+            <rect x="38" y="20" width="20" height="3.6"/><rect x="38" y="26" width="20" height="3.6"/>
+            <rect x="38" y="32" width="14" height="3.6"/><rect x="38" y="38" width="14" height="3.6"/>
+            <rect x="26" y="38" width="3.6" height="20"/><rect x="32" y="38" width="3.6" height="20"/>
+            <rect x="20" y="38" width="3.6" height="14"/><rect x="38" y="38" width="3.6" height="14"/>
+          </g>
+          <text x="68" y="46" font-family="Georgia, 'Times New Roman', serif" font-size="38" font-weight="700" fill="#2b2b2b" letter-spacing="2">HANA</text>
+        </svg>
+        <div style="border-left:1.5px solid #cbd5e1;padding-left:10px;">
+          <div style="font-size:13px;font-weight:800;color:#1e3a8a;line-height:1.1;">EXAM ONLINE</div>
+          <div style="font-size:9px;font-weight:700;color:#64748b;letter-spacing:0.8px;margin-top:2px;">SMART ASSESSMENT</div>
         </div>
       </div>
 
